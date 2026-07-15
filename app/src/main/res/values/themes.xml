@@ -1,0 +1,17 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <style name="Base.Theme.Reproducers" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/accent</item>
+        <item name="colorSecondary">@color/accentSecondary</item>
+        <item name="colorTertiary">@color/accentLight</item>
+        <item name="colorPrimaryContainer">@color/primaryDark</item>
+        <item name="colorSecondaryContainer">@color/surface</item>
+        <item name="colorOnPrimary">@color/textPrimary</item>
+        <item name="colorOnSecondary">@color/textPrimary</item>
+        <item name="android:colorBackground">@color/primary</item>
+        <item name="colorSurface">@color/surface</item>
+        <item name="colorOnSurface">@color/textPrimary</item>
+        <item name="android:navigationBarColor">@color/primary</item>
+        <item name="android:statusBarColor">@color/primaryDark</item>
+    </style>
+    <style name="Theme.Reproductor" parent="Base.Theme.Reproducers" />
+</resources>

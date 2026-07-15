@@ -1,0 +1,12 @@
+<resources>
+    <color name="primary">#F5F7FF</color>
+    <color name="primaryDark">#E7ECFF</color>
+    <color name="surface">#FFFFFF</color>
+    <color name="accent">#6D4CFF</color>
+    <color name="accentLight">#8EA3FF</color>
+    <color name="accentSecondary">#00B8D9</color>
+    <color name="textPrimary">#0F172A</color>
+    <color name="textSecondary">#475569</color>
+    <color name="divider">#D9E0F3</color>
+    <color name="iconTint">#0F172A</color>
+</resources>

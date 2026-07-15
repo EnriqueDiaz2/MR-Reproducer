@@ -1,0 +1,69 @@
+<LinearLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/miniPlayerRoot"
+    android:layout_width="match_parent"
+    android:layout_height="64dp"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:background="@color/surface"
+    android:padding="8dp"
+    android:visibility="gone">
+
+    <ImageView
+        android:id="@+id/miniCover"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:scaleType="centerCrop"
+        android:src="@drawable/ic_music_note"/>
+
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:layout_marginStart="8dp">
+
+        <TextView
+            android:id="@+id/miniTitle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#FFFFFF"
+            android:singleLine="true"
+            android:ellipsize="marquee" />
+
+        <TextView
+            android:id="@+id/miniArtist"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="#AAAAAA"
+            android:textSize="12sp"
+            android:singleLine="true" />
+
+    </LinearLayout>
+
+    <ImageButton
+        android:id="@+id/miniPrev"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_rounded_button"
+        android:src="@drawable/ic_previous"
+        app:tint="@color/iconTint"/>
+
+    <ImageButton
+        android:id="@+id/miniPlayPause"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_rounded_button"
+        android:src="@drawable/ic_play"
+        app:tint="@color/iconTint"/>
+
+    <ImageButton
+        android:id="@+id/miniNext"
+        android:layout_width="40dp"
+        android:layout_height="40dp"
+        android:background="@drawable/bg_rounded_button"
+        android:src="@drawable/ic_next"
+        app:tint="@color/iconTint"/>
+
+</LinearLayout>

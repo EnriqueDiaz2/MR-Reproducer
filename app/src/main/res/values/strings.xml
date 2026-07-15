@@ -1,0 +1,44 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <string name="app_name">MR Reproducer</string>
+    <string name="songs">Canciones</string>
+    <string name="albums">Álbumes</string>
+    <string name="artists">Artistas</string>
+    <string name="playlists">Listas</string>
+    <string name="favorites">Favoritos</string>
+    <string name="settings">Configuración</string>
+    <string name="appearance" tools:ignore="MissingTranslation">Apariencia</string>
+    <string name="appearance_light" tools:ignore="MissingTranslation">Claro</string>
+    <string name="appearance_dark" tools:ignore="MissingTranslation">Oscuro</string>
+    <string name="view_lyrics">Ver letra</string>
+    <string name="library">Biblioteca</string>
+    <string name="select_music_folder">Seleccionar carpeta de música</string>
+    <string name="import_files">Importar archivos</string>
+    <string name="language">Idioma</string>
+    <string name="equalizer">Ecualizador</string>
+    <string name="playlist_name_hint">Nombre de la lista</string>
+    <string name="new_playlist_title">Nueva lista de reproducción</string>
+    <string name="create">Crear</string>
+    <string name="cancel">Cancelar</string>
+    <string name="add_to_playlist">Agregar a lista</string>
+    <string name="added_to_playlist">Agregada a %1$s</string>
+    <string name="first_create_playlist">Primero crea una lista en la pestaña Listas</string>
+    <string name="edit_song">Editar canción</string>
+    <string name="add_to_playlist_option">Agregar a lista de reproducción</string>
+    <string name="song_updated">Canción actualizada</string>
+    <string name="searching_lyrics">Buscando letra...</string>
+    <string name="no_lyrics_found">No se encontró la letra</string>
+    <string name="selection_cancelled">Selección cancelada</string>
+    <string name="no_file_selected">No se seleccionó ningún archivo</string>
+    <string name="could_not_read_folder">No se pudo leer la carpeta</string>
+    <string name="unknown_value">Desconocido</string>
+    <string name="play_song_to_use_equalizer">Reproduce una canción para activar el ecualizador</string>
+    <string name="language_spanish">Español</string>
+    <string name="language_english">Inglés</string>
+    <string name="player_not_ready">Reproductor no listo, intenta de nuevo</string>
+    <string name="rewind_10_seconds">Retroceder 10 s</string>
+    <string name="forward_10_seconds">Avanzar 10 s</string>
+    <string name="previous_track">Anterior</string>
+    <string name="play_pause">Play/Pausa</string>
+    <string name="next_track">Siguiente</string>
+    <string name="song_progress">%1$s / %2$s</string>
+</resources>
