@@ -19,10 +19,4 @@
         app:tint="@color/iconTint"
         app:backgroundTint="@color/accent" />
 
-    <!-- Pruebas Con EL Mini Reproductor -->
-
-    <include
-        android:id="@+id/miniPlayerRoot"
-        layout="@layout/mini_player" />
-
 </FrameLayout>

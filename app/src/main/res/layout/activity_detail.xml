@@ -17,4 +17,9 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent" />
 
+    <!-- Prueba 3 MiniPlayer En actvity_detail -->
+    <include
+        android:id="@+id/miniPlayerRoot"
+        layout="@layout/mini_player" />
+
 </LinearLayout>
