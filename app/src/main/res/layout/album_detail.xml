@@ -12,6 +12,10 @@
         android:background="@color/primary"
         app:titleTextColor="#FFFFFF" />
 
+    <include
+        android:id="@+id/miniPlayerRoot"
+        layout="@layout/mini_player" />
+
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerDetail"
         android:layout_width="match_parent"

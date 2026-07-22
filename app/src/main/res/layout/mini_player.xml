@@ -28,7 +28,7 @@
             android:id="@+id/miniTitle"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
+            android:textColor="@color/textSecondary"
             android:singleLine="true"
             android:ellipsize="marquee" />
 
@@ -36,7 +36,7 @@
             android:id="@+id/miniArtist"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:textColor="#AAAAAA"
+            android:textColor="@color/textSecondary"
             android:textSize="12sp"
             android:singleLine="true" />
 
