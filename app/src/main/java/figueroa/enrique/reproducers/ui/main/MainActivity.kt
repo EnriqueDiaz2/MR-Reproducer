@@ -3,6 +3,7 @@ package figueroa.enrique.reproducers.ui.main
 import android.content.*
 import android.graphics.Bitmap
 import android.os.*
+import android.view.View
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
@@ -54,6 +55,8 @@ class MainActivity : AppCompatActivity() {
                 .commit()
         }
 
+        findViewById<View>(R.id.miniPlayerRoot).visibility = View.VISIBLE
+
         binding.toolbar.setOnMenuItemClickListener { item ->
             if (item.itemId == R.id.action_settings) {
                 supportFragmentManager.beginTransaction()
@@ -100,7 +103,7 @@ class MainActivity : AppCompatActivity() {
             binding.toolbar.setNavigationOnClickListener {
                 if (isInSettings) supportFragmentManager.popBackStack()
             }
-            binding.bottomNav.visibility = if (isInSettings) android.view.View.GONE else android.view.View.VISIBLE
+            binding.bottomNav.visibility = if (isInSettings) View.GONE else View.VISIBLE
         }
 
         // --- Mini player ---
@@ -128,11 +131,11 @@ class MainActivity : AppCompatActivity() {
         val song = service.currentPlaylist.getOrNull(service.currentIndex)
 
         if (song == null) {
-            binding.miniPlayerRoot.root.visibility = android.view.View.GONE
+            binding.miniPlayerRoot.root.visibility = View.GONE
             return
         }
 
-        binding.miniPlayerRoot.root.visibility = android.view.View.VISIBLE
+        binding.miniPlayerRoot.root.visibility = View.VISIBLE
         binding.miniPlayerRoot.miniTitle.text = song.title
         binding.miniPlayerRoot.miniArtist.text = song.artist
 

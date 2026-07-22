@@ -22,4 +22,9 @@
         android:id="@+id/miniPlayerRoot"
         layout="@layout/mini_player" />
 
+    <!-- Prueba con el menu -->
+    <include
+        android:id="@+id/bottomNav"
+        layout="@menu/bottom_nav_menu" />
+
 </LinearLayout>
