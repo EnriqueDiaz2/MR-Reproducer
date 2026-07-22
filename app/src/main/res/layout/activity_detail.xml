@@ -15,16 +15,14 @@
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/recyclerDetail"
         android:layout_width="match_parent"
-        android:layout_height="match_parent" />
+        android:layout_height="0dp"
+        android:layout_weight="1"/>
 
     <!-- Prueba MiniPlayer En actvity_detail -->
     <include
         android:id="@+id/miniPlayerRoot"
-        layout="@layout/mini_player" />
-
-    <!-- Prueba con el menu -->
-    <include
-        android:id="@+id/bottomNav"
-        layout="@menu/bottom_nav_menu" />
+        layout="@layout/mini_player"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"/>
 
 </LinearLayout>

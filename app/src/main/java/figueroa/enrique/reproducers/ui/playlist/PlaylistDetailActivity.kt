@@ -3,6 +3,8 @@ package figueroa.enrique.reproducers.ui.playlist
 import android.content.Intent
 import android.os.Bundle
 import android.widget.Toast
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import figueroa.enrique.reproducers.data.db.AppDatabase
 import figueroa.enrique.reproducers.data.model.Song
@@ -22,6 +24,7 @@ class PlaylistDetailActivity : BasePlayerActivity() {
     private lateinit var repo: MusicRepository
     private var currentSongs: List<Song> = emptyList()
 
+    @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         binding = ActivityDetailBinding.inflate(layoutInflater)
