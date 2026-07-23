@@ -167,7 +167,7 @@ class MainActivity : AppCompatActivity() {
 
     override fun onStart() {
         super.onStart()
-        //ContextCompat.startForegroundService(this, Intent(this, MusicService::class.java))
+        ContextCompat.startForegroundService(this, Intent(this, MusicService::class.java))
         Intent(this, MusicService::class.java).also {
             bindService(it, connection, Context.BIND_AUTO_CREATE)
         }

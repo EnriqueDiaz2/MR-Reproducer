@@ -21,6 +21,7 @@
     <string name="cancel">Cancelar</string>
     <string name="experimental">Experimental</string>
     <string name="experimentaltext">Aleatorio adaptativo (favorece lo que más escuchas)</string>
+    <string name="no_song_playing">Sin reproducción activa</string>
     <string name="add_to_playlist">Agregar a lista</string>
     <string name="added_to_playlist">Agregada a %1$s</string>
     <string name="first_create_playlist">Primero crea una lista en la pestaña Listas</string>

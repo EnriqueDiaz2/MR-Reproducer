@@ -15,6 +15,7 @@ import androidx.media3.common.MediaItem
 import androidx.media3.exoplayer.ExoPlayer
 import figueroa.enrique.reproducers.R
 import figueroa.enrique.reproducers.data.db.AppDatabase
+import androidx.media3.common.Player.Listener
 import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.ui.main.MainActivity
@@ -66,8 +67,9 @@ class MusicService : Service() {
         player = ExoPlayer.Builder(this).build()
         createNotificationChannel()
         setupMediaSession()
+        startForeground(NOTIF_ID, buildIdleNotification())
 
-        player.addListener(object : androidx.media3.common.Player.Listener {
+        player.addListener(object : Listener {
             override fun onIsPlayingChanged(isPlaying: Boolean) {
                 refreshSessionAndNotification()
             }
@@ -76,6 +78,16 @@ class MusicService : Service() {
                 refreshSessionAndNotification()
             }
         })
+    }
+
+    private fun buildIdleNotification(): Notification {
+        return NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.no_song_playing))
+            .setSmallIcon(R.drawable.ic_music_note)
+            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setOngoing(false)
+            .build()
     }
 
     private fun setupMediaSession() {

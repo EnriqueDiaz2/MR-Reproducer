@@ -8,7 +8,7 @@ import figueroa.enrique.reproducers.data.model.*
 
 @Database(
     entities = [Song::class, Album::class, Artist::class, Playlist::class, PlaylistSongCrossRef::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
