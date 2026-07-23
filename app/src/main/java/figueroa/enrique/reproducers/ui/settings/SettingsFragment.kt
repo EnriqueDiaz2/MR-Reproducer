@@ -17,6 +17,8 @@ import figueroa.enrique.reproducers.R
 import figueroa.enrique.reproducers.ReproducersApp
 import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.data.db.AppDatabase
+import figueroa.enrique.reproducers.util.AppPreferences
+import figueroa.enrique.reproducers.util.EqualizerHelper
 import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.FragmentSettingsBinding
@@ -26,7 +28,7 @@ class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
     private val binding get() = _binding!!
     private lateinit var repo: MusicRepository
-    private var equalizerHelper: figueroa.enrique.reproducers.util.EqualizerHelper? = null
+    private var equalizerHelper: EqualizerHelper? = null
     private var languageSpinnerReady = false // evita el auto-disparo inicial
     private var appearanceSpinnerReady = false
 
@@ -71,6 +73,11 @@ class SettingsFragment : Fragment() {
             } catch (e: Exception) {
                 Toast.makeText(requireContext(), "Error al abrir selector: ${e.message}", Toast.LENGTH_LONG).show()
             }
+        }
+
+        binding.switchAdaptiveShuffle.isChecked = AppPreferences.isAdaptiveShuffleEnabled(requireContext())
+        binding.switchAdaptiveShuffle.setOnCheckedChangeListener { _, isChecked ->
+            AppPreferences.setAdaptiveShuffle(requireContext(), isChecked)
         }
 
         setupLanguageSpinner()
@@ -230,7 +237,7 @@ class SettingsFragment : Fragment() {
         }
 
         try {
-            equalizerHelper = figueroa.enrique.reproducers.util.EqualizerHelper(sessionId)
+            equalizerHelper = EqualizerHelper(sessionId)
             val eq = equalizerHelper ?: return
 
             binding.equalizerContainer.removeAllViews()

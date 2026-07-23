@@ -15,6 +15,6 @@ data class Song(
     val isVideo: Boolean = false,
     val isFavorite: Boolean = false,
     val lyricsPath: String? = null,  // si el usuario importó letra .lrc
-    val dateAdded: Long = System.currentTimeMillis()
+    val dateAdded: Long = System.currentTimeMillis(),
+    val playCount: Int = 0
 )
-

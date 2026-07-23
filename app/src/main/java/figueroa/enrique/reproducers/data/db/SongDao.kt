@@ -33,6 +33,9 @@ interface SongDao {
     @Query("UPDATE songs SET isFavorite = :isFav WHERE id = :songId")
     suspend fun setFavorite(songId: Long, isFav: Boolean)
 
+    @Query("UPDATE songs SET playCount = playCount + 1 WHERE id = :songId")
+    suspend fun incrementPlayCount(songId: Long)
+
     @Delete
     suspend fun delete(song: Song)
 }

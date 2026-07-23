@@ -67,6 +67,21 @@
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:text="@string/experimental"
+            android:textColor="@color/textPrimary"
+            android:textStyle="bold"
+            android:layout_marginTop="24dp" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchAdaptiveShuffle"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/textSecondary"
+            android:text="@string/experimentaltext" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
             android:text="@string/equalizer"
             android:textColor="@color/textPrimary"
             android:textStyle="bold"

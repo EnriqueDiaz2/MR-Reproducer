@@ -147,6 +147,17 @@ class PlayerActivity : AppCompatActivity() {
         binding.btnRepeat.alpha = if (service.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
     }
 
+    /*private fun syncShuffleRepeatIcons() {
+        val service = musicService ?: return
+        binding.btnShuffle.alpha = if (service.isShuffle) 1f else 0.4f
+        val repeatIcon = when (service.repeatMode) {
+            MusicService.REPEAT_ONE -> R.drawable.ic_repeat_one
+            else -> R.drawable.ic_repeat
+        }
+        binding.btnRepeat.setImageResource(repeatIcon)
+        binding.btnRepeat.alpha = if (service.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
+    }*/
+
     private suspend fun loadSafeArtwork(song: figueroa.enrique.reproducers.data.model.Song): Bitmap? {
         val albumCoverPath = repo.albumById(song.albumId)?.coverImagePath
         val albumCover = albumCoverPath?.let { path ->

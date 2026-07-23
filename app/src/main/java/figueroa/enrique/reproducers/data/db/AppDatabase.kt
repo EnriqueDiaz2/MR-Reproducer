@@ -25,11 +25,25 @@ abstract class AppDatabase : RoomDatabase() {
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
+                    "reproductor_db"  // usa el nombre real que ya tengas aquí
+                )
+                    .fallbackToDestructiveMigration()
+                    .build()
+                INSTANCE = instance
+                instance
+            }
+        }
+
+        /*fun getDatabase(context: Context): AppDatabase {
+            return INSTANCE ?: synchronized(this) {
+                val instance = Room.databaseBuilder(
+                    context.applicationContext,
+                    AppDatabase::class.java,
                     "reproductor_db"
                 ).build()
                 INSTANCE = instance
                 instance
             }
-        }
+        }*/
     }
 }

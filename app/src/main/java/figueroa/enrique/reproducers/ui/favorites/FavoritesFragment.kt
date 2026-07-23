@@ -3,7 +3,9 @@ package figueroa.enrique.reproducers.ui.favorites
 import android.content.Intent
 import android.os.Bundle
 import android.view.*
+import androidx.annotation.OptIn
 import androidx.fragment.app.Fragment
+import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
 import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.data.db.AppDatabase
@@ -23,6 +25,7 @@ class FavoritesFragment : Fragment() {
         return binding.root
     }
 
+    @OptIn(UnstableApi::class)
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
 
@@ -38,7 +41,8 @@ class FavoritesFragment : Fragment() {
                 figueroa.enrique.reproducers.util.EditSongDialog.show(requireContext(), song, repo) {
                     android.widget.Toast.makeText(requireContext(), "Canción actualizada", android.widget.Toast.LENGTH_SHORT).show()
                 }
-            }
+            },
+            musicService = { (activity as? MainActivity)?.musicService }
         )
 
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())

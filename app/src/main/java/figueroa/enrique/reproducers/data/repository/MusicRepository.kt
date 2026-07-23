@@ -16,7 +16,7 @@ class MusicRepository(db: AppDatabase) {
     val allArtists: LiveData<List<Artist>> = artistDao.getAllArtists()
     val allPlaylists: LiveData<List<Playlist>> = playlistDao.getAllPlaylists()
 
-    fun songsByAlbum(albumId: Long) = songDao.getSongsByAlbum(albumId)
+    //fun songsByAlbum(albumId: Long) = songDao.getSongsByAlbum(albumId)
     fun songsByAlbum(albumName: String, artistName: String) = songDao.getSongsByAlbum(albumName, artistName)
     fun songsByArtist(name: String) = songDao.getSongsByArtist(name)
     fun songsInPlaylist(playlistId: Long) = playlistDao.getSongsInPlaylist(playlistId)
@@ -26,7 +26,9 @@ class MusicRepository(db: AppDatabase) {
         songDao.setFavorite(song.id, !song.isFavorite)
     }
 
-    suspend fun insertSong(song: Song) = songDao.insert(song)
+    suspend fun artistByName(name: String) = artistDao.findByName(name)
+
+    //suspend fun insertSong(song: Song) = songDao.insert(song)
 
     suspend fun updateSong(song: Song) {
         val normalizedArtist = ensureArtist(song.artist)

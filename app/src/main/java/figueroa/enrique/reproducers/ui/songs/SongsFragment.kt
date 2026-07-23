@@ -54,6 +54,8 @@ class SongsFragment : Fragment() {
                     return@SongAdapter
                 }
 
+                refreshHandler.post(refreshRunnable)
+
                 val list = viewModel.songs.value ?: listOf()
                 service.playSong(song, list, index)
                 startActivity(Intent(requireContext(),
@@ -74,7 +76,8 @@ class SongsFragment : Fragment() {
                 startActivity(android.content.Intent(requireContext(), PlayerActivity::class.java))*/
             },
             onFavoriteClick = { song -> viewModel.toggleFavorite(song) },
-            onMoreClick = { song -> showSongOptionsDialog(song) }
+            onMoreClick = { song -> showSongOptionsDialog(song) },
+            musicService = { (activity as? MainActivity)?.musicService }
             //onMoreClick = { song -> showAddToPlaylistDialog(song) }
         )
 
@@ -83,6 +86,14 @@ class SongsFragment : Fragment() {
 
         viewModel.songs.observe(viewLifecycleOwner) { songs ->
             adapter.submitList(songs)
+        }
+    }
+
+    private val refreshHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        override fun run() {
+            adapter.notifyDataSetChanged()
+            refreshHandler.postDelayed(this, 1000)
         }
     }
 
@@ -127,5 +138,7 @@ class SongsFragment : Fragment() {
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
+
+        refreshHandler.removeCallbacksAndMessages(null)
     }
 }

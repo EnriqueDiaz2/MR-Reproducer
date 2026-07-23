@@ -14,6 +14,8 @@
     <string name="equalizer">Equalizer</string>
     <string name="playlist_name_hint">Playlist name</string>
     <string name="new_playlist_title">New playlist</string>
+    <string name="experimental">Experimental</string>
+    <string name="experimentaltext">Adaptive shuffle (favors what you listen to most)</string>
     <string name="create">Create</string>
     <string name="cancel">Cancel</string>
     <string name="add_to_playlist">Add to list</string>

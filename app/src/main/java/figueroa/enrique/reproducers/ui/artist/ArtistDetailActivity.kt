@@ -10,6 +10,7 @@ import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.ActivityDetailBinding
 import figueroa.enrique.reproducers.ui.base.BasePlayerActivity
+import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
 import figueroa.enrique.reproducers.ui.songs.SongAdapter
 import kotlinx.coroutines.*
@@ -18,6 +19,8 @@ class ArtistDetailActivity : BasePlayerActivity() {
     private lateinit var binding: ActivityDetailBinding
     private lateinit var repo: MusicRepository
     private var currentSongs: List<Song> = emptyList()
+
+    override fun getMiniPlayerBinding() = binding.miniPlayerRoot
 
     @OptIn(UnstableApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -43,7 +46,8 @@ class ArtistDetailActivity : BasePlayerActivity() {
                 figueroa.enrique.reproducers.util.EditSongDialog.show(this, song, repo) {
                     android.widget.Toast.makeText(this, getString(figueroa.enrique.reproducers.R.string.song_updated), android.widget.Toast.LENGTH_SHORT).show()
                 }
-            }
+            },
+            musicService = { musicService }
         )
 
         binding.recyclerDetail.layoutManager = LinearLayoutManager(this)
