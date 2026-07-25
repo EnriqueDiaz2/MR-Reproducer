@@ -9,7 +9,7 @@
     <com.google.android.material.textfield.TextInputLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:hint="Título">
+        android:hint="@string/title">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editTitle"
@@ -22,7 +22,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:hint="Artista">
+        android:hint="@string/artist">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editArtist"
@@ -35,7 +35,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="12dp"
-        android:hint="Álbum">
+        android:hint="@string/album">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/editAlbum"

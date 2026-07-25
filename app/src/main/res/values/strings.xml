@@ -6,6 +6,9 @@
     <string name="playlists">Listas</string>
     <string name="favorites">Favoritos</string>
     <string name="settings">Configuración</string>
+    <string name="title">Título</string>
+    <string name="artist">Artista</string>
+    <string name="album">Álbum</string>
     <string name="appearance" tools:ignore="MissingTranslation">Apariencia</string>
     <string name="appearance_light" tools:ignore="MissingTranslation">Claro</string>
     <string name="appearance_dark" tools:ignore="MissingTranslation">Oscuro</string>

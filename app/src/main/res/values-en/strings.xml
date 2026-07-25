@@ -12,6 +12,9 @@
     <string name="import_files">Import files</string>
     <string name="language">Language</string>
     <string name="equalizer">Equalizer</string>
+    <string name="title">Title</string>
+    <string name="artist">Artist</string>
+    <string name="album">Album</string>
     <string name="playlist_name_hint">Playlist name</string>
     <string name="new_playlist_title">New playlist</string>
     <string name="experimental">Experimental</string>

@@ -12,7 +12,8 @@
         android:layout_width="50dp"
         android:layout_height="50dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_music_note"/>
+        android:src="@drawable/ic_music_note"
+        app:tint="@color/iconTint"/>
 
     <LinearLayout
         android:layout_width="0dp"
