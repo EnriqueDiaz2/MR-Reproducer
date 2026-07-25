@@ -12,8 +12,7 @@
         android:layout_width="56dp"
         android:layout_height="56dp"
         android:scaleType="centerCrop"
-        android:src="@drawable/ic_artist"
-        app:tint="@color/iconTint"/>
+        android:src="@drawable/ic_artist" />
 
     <TextView
         android:id="@+id/artistName"
