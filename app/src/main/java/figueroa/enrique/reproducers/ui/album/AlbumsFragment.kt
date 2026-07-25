@@ -1,9 +1,12 @@
 package figueroa.enrique.reproducers.ui.album
 
+import android.annotation.SuppressLint
 import android.app.Activity
 import android.content.Intent
 import android.net.Uri
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
@@ -18,6 +21,7 @@ class AlbumsFragment : Fragment() {
     private var _binding: FragmentAlbumsBinding? = null
     private val binding get() = _binding!!
     private lateinit var repo: MusicRepository
+    private lateinit var adapter: AlbumAdapter
     private var albumToEdit: Album? = null
 
     private val pickImageLauncher = registerForActivityResult(
@@ -46,7 +50,7 @@ class AlbumsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
 
-        val adapter = AlbumAdapter(
+        adapter = AlbumAdapter(
             onClick = { album ->
                 startActivity(
                     Intent(requireContext(), figueroa.enrique.reproducers.ui.album.AlbumDetailActivity::class.java)
@@ -65,11 +69,26 @@ class AlbumsFragment : Fragment() {
             }
         )
 
+        refreshHandler.post(refreshRunnable)
+
         binding.recyclerAlbums.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerAlbums.adapter = adapter
 
         repo.allAlbums.observe(viewLifecycleOwner) { adapter.submitList(it) }
     }
 
-    override fun onDestroyView() { super.onDestroyView(); _binding = null }
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        @SuppressLint("NotifyDataSetChanged")
+        override fun run() {
+            adapter.notifyDataSetChanged()
+            refreshHandler.postDelayed(this, 1000)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView(); _binding = null
+
+        refreshHandler.removeCallbacksAndMessages(null)
+    }
 }

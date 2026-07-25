@@ -7,6 +7,7 @@
     <color name="accentSecondary">#22D3EE</color>
     <color name="textPrimary">#FFFFFF</color>
     <color name="textSecondary">#B0B0C0</color>
+    <color name="playingHighlight">#3A1E5C</color>
     <color name="divider">#27314F</color>
     <color name="iconTint">#F8FAFC</color>
 </resources>

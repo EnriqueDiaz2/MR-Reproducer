@@ -22,7 +22,15 @@ import figueroa.enrique.reproducers.util.EqualizerHelper
 import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.FragmentSettingsBinding
+import android.R.layout
+import android.content.Context
+import android.content.res.Configuration
+import android.widget.ArrayAdapter
+import android.widget.AdapterView
+import android.widget.SeekBar
+import android.widget.TextView
 import kotlinx.coroutines.*
+import java.util.Locale
 
 class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
@@ -78,6 +86,16 @@ class SettingsFragment : Fragment() {
         binding.switchAdaptiveShuffle.isChecked = AppPreferences.isAdaptiveShuffleEnabled(requireContext())
         binding.switchAdaptiveShuffle.setOnCheckedChangeListener { _, isChecked ->
             AppPreferences.setAdaptiveShuffle(requireContext(), isChecked)
+        }
+
+        binding.switchAppCarousel.isChecked = AppPreferences.isAppCarouselEnabled(requireContext())
+        binding.switchAppCarousel.setOnCheckedChangeListener { _, isChecked ->
+            AppPreferences.setAppCarousel(requireContext(), isChecked)
+        }
+
+        binding.switchNotificationCarousel.isChecked = AppPreferences.isNotificationCarouselEnabled(requireContext())
+        binding.switchNotificationCarousel.setOnCheckedChangeListener { _, isChecked ->
+            AppPreferences.setNotificationCarousel(requireContext(), isChecked)
         }
 
         setupLanguageSpinner()
@@ -141,16 +159,16 @@ class SettingsFragment : Fragment() {
 
     private fun setupLanguageSpinner() {
         val languages = arrayOf(getString(R.string.language_spanish), getString(R.string.language_english))
-        val adapter = android.widget.ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, languages)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(requireContext(), layout.simple_spinner_item, languages)
+        adapter.setDropDownViewResource(layout.simple_spinner_dropdown_item)
         binding.spinnerLanguage.adapter = adapter
 
         // Preselecciona el idioma actual sin disparar el listener
-        val currentLang = java.util.Locale.getDefault().language
+        val currentLang = Locale.getDefault().language
         binding.spinnerLanguage.setSelection(if (currentLang == "en") 1 else 0, false)
 
-        binding.spinnerLanguage.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+        binding.spinnerLanguage.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (!languageSpinnerReady) {
                     // Ignora el primer disparo automático del Spinner
                     languageSpinnerReady = true
@@ -159,27 +177,27 @@ class SettingsFragment : Fragment() {
                 val localeCode = if (position == 0) "es" else "en"
                 setAppLocale(localeCode)
             }
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
 
     private fun setupAppearanceSpinner() {
         val options = arrayOf(getString(R.string.appearance_light), getString(R.string.appearance_dark))
-        val adapter = android.widget.ArrayAdapter(requireContext(), android.R.layout.simple_spinner_item, options)
-        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        val adapter = ArrayAdapter(requireContext(), layout.simple_spinner_item, options)
+        adapter.setDropDownViewResource(layout.simple_spinner_dropdown_item)
         binding.spinnerAppearance.adapter = adapter
 
-        val prefs = requireContext().getSharedPreferences(ReproducersApp.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+        val prefs = requireContext().getSharedPreferences(ReproducersApp.PREFS_NAME, Context.MODE_PRIVATE)
         val savedMode = prefs.getString(ReproducersApp.KEY_APPEARANCE_MODE, ReproducersApp.MODE_SYSTEM)
         val currentSelection = when (savedMode) {
             ReproducersApp.MODE_DARK -> 1
             ReproducersApp.MODE_LIGHT -> 0
-            else -> if ((resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES) 1 else 0
+            else -> if ((resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES) 1 else 0
         }
         binding.spinnerAppearance.setSelection(currentSelection, false)
 
-        binding.spinnerAppearance.onItemSelectedListener = object : android.widget.AdapterView.OnItemSelectedListener {
-            override fun onItemSelected(parent: android.widget.AdapterView<*>?, view: View?, position: Int, id: Long) {
+        binding.spinnerAppearance.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {
+            override fun onItemSelected(parent: AdapterView<*>?, view: View?, position: Int, id: Long) {
                 if (!appearanceSpinnerReady) {
                     appearanceSpinnerReady = true
                     return
@@ -188,12 +206,12 @@ class SettingsFragment : Fragment() {
                 saveAppearanceMode(mode)
             }
 
-            override fun onNothingSelected(parent: android.widget.AdapterView<*>?) {}
+            override fun onNothingSelected(parent: AdapterView<*>?) {}
         }
     }
 
     private fun saveAppearanceMode(mode: String) {
-        requireContext().getSharedPreferences(ReproducersApp.PREFS_NAME, android.content.Context.MODE_PRIVATE)
+        requireContext().getSharedPreferences(ReproducersApp.PREFS_NAME, Context.MODE_PRIVATE)
             .edit()
             .putString(ReproducersApp.KEY_APPEARANCE_MODE, mode)
             .apply()
@@ -217,7 +235,7 @@ class SettingsFragment : Fragment() {
 
         if (service == null) {
             binding.equalizerContainer.removeAllViews()
-            val msg = android.widget.TextView(requireContext()).apply {
+            val msg = TextView(requireContext()).apply {
                 text = getString(R.string.play_song_to_use_equalizer)
                 setTextColor(resources.getColor(android.R.color.darker_gray, null))
             }
@@ -228,7 +246,7 @@ class SettingsFragment : Fragment() {
         val sessionId = service.getExoPlayer().audioSessionId
         if (sessionId == 0) {
             binding.equalizerContainer.removeAllViews()
-            val msg = android.widget.TextView(requireContext()).apply {
+            val msg = TextView(requireContext()).apply {
                 text = getString(R.string.play_song_to_use_equalizer)
                 setTextColor(resources.getColor(android.R.color.darker_gray, null))
             }
@@ -243,18 +261,18 @@ class SettingsFragment : Fragment() {
             binding.equalizerContainer.removeAllViews()
             for (band in 0 until eq.bandCount) {
                 val bandShort = band.toShort()
-                val seekBar = android.widget.SeekBar(requireContext()).apply {
+                val seekBar = SeekBar(requireContext()).apply {
                     layoutParams = android.widget.LinearLayout.LayoutParams(
                         0, android.widget.LinearLayout.LayoutParams.WRAP_CONTENT, 1f
                     ).apply { marginStart = 4; marginEnd = 4 }
                     max = (eq.bandLevelRange[1] - eq.bandLevelRange[0])
                     progress = (eq.getBandLevel(bandShort) - eq.bandLevelRange[0])
-                    setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-                        override fun onProgressChanged(sb: android.widget.SeekBar?, p: Int, fromUser: Boolean) {
+                    setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+                        override fun onProgressChanged(sb: SeekBar?, p: Int, fromUser: Boolean) {
                             if (fromUser) eq.setBandLevel(bandShort, (p + eq.bandLevelRange[0]).toShort())
                         }
-                        override fun onStartTrackingTouch(sb: android.widget.SeekBar?) {}
-                        override fun onStopTrackingTouch(sb: android.widget.SeekBar?) {}
+                        override fun onStartTrackingTouch(sb: SeekBar?) {}
+                        override fun onStopTrackingTouch(sb: SeekBar?) {}
                     })
                 }
                 binding.equalizerContainer.addView(seekBar)

@@ -1,7 +1,10 @@
 package figueroa.enrique.reproducers.ui.songs
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import android.widget.Toast
 import androidx.annotation.OptIn
@@ -13,10 +16,12 @@ import androidx.recyclerview.widget.LinearLayoutManager
 import figueroa.enrique.reproducers.R
 import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.data.db.AppDatabase
+import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.FragmentSongsBinding
 import figueroa.enrique.reproducers.service.MusicService
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
+import figueroa.enrique.reproducers.util.EditSongDialog
 import kotlinx.coroutines.*
 
 class SongsFragment : Fragment() {
@@ -89,15 +94,16 @@ class SongsFragment : Fragment() {
         }
     }
 
-    private val refreshHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val refreshHandler = Handler(Looper.getMainLooper())
     private val refreshRunnable = object : Runnable {
+        @SuppressLint("NotifyDataSetChanged")
         override fun run() {
             adapter.notifyDataSetChanged()
             refreshHandler.postDelayed(this, 1000)
         }
     }
 
-    private fun showAddToPlaylistDialog(song: figueroa.enrique.reproducers.data.model.Song) {
+    private fun showAddToPlaylistDialog(song: Song) {
         val repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
         repo.allPlaylists.observe(viewLifecycleOwner) { playlists ->
             if (playlists.isEmpty()) {
@@ -118,14 +124,14 @@ class SongsFragment : Fragment() {
         }
     }
 
-    private fun showSongOptionsDialog(song: figueroa.enrique.reproducers.data.model.Song) {
+    private fun showSongOptionsDialog(song: Song) {
         val options = arrayOf(getString(R.string.edit_song), getString(R.string.add_to_playlist_option))
         android.app.AlertDialog.Builder(requireContext())
             .setItems(options) { _, which ->
                 when (which) {
                     0 -> {
                         val repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
-                        figueroa.enrique.reproducers.util.EditSongDialog.show(requireContext(), song, repo) {
+                        EditSongDialog.show(requireContext(), song, repo) {
                             Toast.makeText(requireContext(), getString(R.string.song_updated), Toast.LENGTH_SHORT).show()
                         }
                     }

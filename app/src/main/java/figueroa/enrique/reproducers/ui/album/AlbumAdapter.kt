@@ -2,6 +2,7 @@ package figueroa.enrique.reproducers.ui.album
 
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -26,12 +27,18 @@ class AlbumAdapter(
         holder.binding.albumName.text = album.name
         holder.binding.albumArtist.text = album.artist
 
-        Glide.with(holder.itemView)
-            .load(album.coverImagePath)
-            .placeholder(R.drawable.ic_album)
-            .into(holder.binding.albumCover)
-
-        //holder.binding.albumCover.setImageResource(R.drawable.ic_album)
+        if (!album.coverImagePath.isNullOrBlank()) {
+            holder.binding.albumCover.imageTintList = null   // <-- clave
+            Glide.with(holder.itemView)
+                .load(album.coverImagePath)
+                .placeholder(R.drawable.ic_album)
+                .centerCrop()
+                .into(holder.binding.albumCover)
+        } else {
+            holder.binding.albumCover.imageTintList =
+                ContextCompat.getColorStateList(holder.itemView.context, R.color.iconTint)
+            holder.binding.albumCover.setImageResource(R.drawable.ic_album)
+        }
 
         holder.binding.root.setOnClickListener { onClick(album) }
         holder.binding.btnEditCover.setOnClickListener { onEditCover(album) }

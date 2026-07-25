@@ -1,16 +1,20 @@
 package figueroa.enrique.reproducers.ui.songs
 
+import android.content.Context
+import android.graphics.drawable.Drawable
+import android.util.TypedValue
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import figueroa.enrique.reproducers.R
-import figueroa.enrique.reproducers.data.db.AppDatabase
 import figueroa.enrique.reproducers.data.model.Song
-import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.ItemSongBinding
 import figueroa.enrique.reproducers.service.MusicService
+import figueroa.enrique.reproducers.util.AppPreferences
+import figueroa.enrique.reproducers.util.ArtworkResolver
 import figueroa.enrique.reproducers.util.CoverCarousel
 import kotlinx.coroutines.*
 
@@ -30,30 +34,34 @@ class SongAdapter(
 
     override fun onBindViewHolder(holder: SongViewHolder, position: Int) {
         val song = getItem(position)
+        val context = holder.itemView.context
         holder.binding.songTitle.text = song.title
         holder.binding.songArtist.text = song.artist
 
         val service = musicService()
         val isCurrentlyPlaying = service?.currentSong()?.id == song.id
 
+        // Resaltado de la fila que está sonando
+        holder.binding.root.background = if (isCurrentlyPlaying) {
+            ContextCompat.getDrawable(context, R.drawable.bg_playing_row)
+        } else {
+            defaultRowBackground(context)
+        }
+
         if (isCurrentlyPlaying) {
-            val repo = MusicRepository(AppDatabase.getDatabase(holder.itemView.context))
             CoroutineScope(Dispatchers.Main).launch {
-                val album = withContext(Dispatchers.IO) { repo.albumById(song.albumId) }
-                val artist = withContext(Dispatchers.IO) { repo.artistByName(song.artist) }
-                val embedded = withContext(Dispatchers.IO) { service?.loadArtwork(song) }
-
-                val sources = mutableListOf<Any>()
-                embedded?.let { sources.add(it) }
-                album?.coverImagePath?.let { sources.add(it) }
-                artist?.imagePath?.let { sources.add(it) }
-
-                CoverCarousel.start(holder.binding.songCover, sources.distinct())
+                val sources = withContext(Dispatchers.IO) { ArtworkResolver.sourcesFor(context, song, service) }
+                if (AppPreferences.isAppCarouselEnabled(context) && sources.size > 1) {
+                    CoverCarousel.start(holder.binding.songCover, sources)
+                } else {
+                    CoverCarousel.applyStatic(holder.binding.songCover, sources)
+                }
             }
         } else {
             CoverCarousel.stop(holder.binding.songCover)
+            holder.binding.songCover.tag = null
             holder.binding.songCover.imageTintList =
-                androidx.core.content.ContextCompat.getColorStateList(holder.itemView.context, R.color.iconTint)
+                ContextCompat.getColorStateList(context, R.color.iconTint)
             holder.binding.songCover.setImageResource(R.drawable.ic_music_note)
         }
 
@@ -64,6 +72,17 @@ class SongAdapter(
         holder.binding.root.setOnClickListener { onClick(song, position) }
         holder.binding.btnFavorite.setOnClickListener { onFavoriteClick(song) }
         holder.binding.btnMore.setOnClickListener { onMoreClick(song) }
+    }
+
+    override fun onViewRecycled(holder: SongViewHolder) {
+        super.onViewRecycled(holder)
+        CoverCarousel.stop(holder.binding.songCover)
+    }
+
+    private fun defaultRowBackground(context: Context): Drawable? {
+        val typedValue = TypedValue()
+        context.theme.resolveAttribute(android.R.attr.selectableItemBackground, typedValue, true)
+        return ContextCompat.getDrawable(context, typedValue.resourceId)
     }
 
     companion object {

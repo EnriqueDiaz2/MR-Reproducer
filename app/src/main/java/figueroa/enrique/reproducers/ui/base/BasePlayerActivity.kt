@@ -13,6 +13,12 @@ import figueroa.enrique.reproducers.R
 import figueroa.enrique.reproducers.databinding.MiniPlayerBinding
 import figueroa.enrique.reproducers.service.MusicService
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
+import figueroa.enrique.reproducers.util.AppPreferences
+import figueroa.enrique.reproducers.util.ArtworkResolver
+import figueroa.enrique.reproducers.util.CoverCarousel
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 abstract class BasePlayerActivity : AppCompatActivity() {
     var musicService: MusicService? = null
@@ -53,6 +59,33 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         val mp = getMiniPlayerBinding() ?: return
         val service = musicService ?: return
         val song = service.currentPlaylist.getOrNull(service.currentIndex)
+        if (song == null) {
+            mp.root.visibility = View.GONE
+            CoverCarousel.stop(mp.miniCover)
+            return
+        }
+        mp.root.visibility = View.VISIBLE
+        mp.miniTitle.text = song.title
+        mp.miniArtist.text = song.artist
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val sources = kotlinx.coroutines.withContext(Dispatchers.IO) {
+                ArtworkResolver.sourcesFor(this@BasePlayerActivity, song, service)
+            }
+            if (AppPreferences.isAppCarouselEnabled(this@BasePlayerActivity) && sources.size > 1) {
+                CoverCarousel.start(mp.miniCover, sources)
+            } else {
+                CoverCarousel.applyStatic(mp.miniCover, sources)
+            }
+        }
+
+        mp.miniPlayPause.setImageResource(if (service.isPlaying()) R.drawable.ic_pause else R.drawable.ic_play)
+    }
+
+    /*private fun updateMiniPlayer() {
+        val mp = getMiniPlayerBinding() ?: return
+        val service = musicService ?: return
+        val song = service.currentPlaylist.getOrNull(service.currentIndex)
         if (song == null) { mp.root.visibility = View.GONE; return }
         mp.root.visibility = View.VISIBLE
         mp.miniTitle.text = song.title
@@ -68,7 +101,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         }
 
         mp.miniPlayPause.setImageResource(if (service.isPlaying()) R.drawable.ic_pause else R.drawable.ic_play)
-    }
+    }*/
 
     private fun startMiniPlayerUpdates() {
         handler.post(object : Runnable {

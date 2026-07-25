@@ -1,7 +1,10 @@
 package figueroa.enrique.reproducers.ui.album
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -19,6 +22,7 @@ import kotlinx.coroutines.*
 class AlbumDetailActivity : BasePlayerActivity() {
     private lateinit var binding: ActivityDetailBinding
     private lateinit var repo: MusicRepository
+    private lateinit var adapter: SongAdapter
     private var currentSongs: List<Song> = emptyList()
 
     override fun getMiniPlayerBinding() = binding.miniPlayerRoot
@@ -39,7 +43,7 @@ class AlbumDetailActivity : BasePlayerActivity() {
 
         repo = MusicRepository(AppDatabase.getDatabase(this))
 
-        val adapter = SongAdapter(
+        adapter = SongAdapter(
             onClick = { song, index ->
                 musicService?.playSong(song, currentSongs, index)
                 startActivity(Intent(this, PlayerActivity::class.java))
@@ -58,6 +62,17 @@ class AlbumDetailActivity : BasePlayerActivity() {
         repo.songsByAlbum(albumName, albumArtist).observe(this) {
             currentSongs = it
             adapter.submitList(it)
+        }
+
+        refreshHandler.post(refreshRunnable)
+    }
+
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        @SuppressLint("NotifyDataSetChanged")
+        override fun run() {
+            adapter.notifyDataSetChanged()
+            refreshHandler.postDelayed(this, 1000)
         }
     }
 }

@@ -1,7 +1,10 @@
 package figueroa.enrique.reproducers.ui.playlist
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import android.widget.EditText
 import androidx.appcompat.app.AlertDialog
@@ -15,6 +18,7 @@ import kotlinx.coroutines.*
 
 class PlaylistsFragment : Fragment() {
     private var _binding: FragmentPlaylistsBinding? = null
+    private lateinit var adapter: PlaylistAdapter
     private val binding get() = _binding!!
     private lateinit var repo: MusicRepository
 
@@ -26,7 +30,7 @@ class PlaylistsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
 
-        val adapter = PlaylistAdapter { playlist ->
+        adapter = PlaylistAdapter { playlist ->
             startActivity(
                 Intent(requireContext(), PlaylistDetailActivity::class.java)
                     .putExtra("playlistId", playlist.id)
@@ -51,7 +55,22 @@ class PlaylistsFragment : Fragment() {
                 .setNegativeButton(R.string.cancel, null)
                 .show()
         }
+
+        refreshHandler.post(refreshRunnable)
     }
 
-    override fun onDestroyView() { super.onDestroyView(); _binding = null }
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        @SuppressLint("NotifyDataSetChanged")
+        override fun run() {
+            adapter.notifyDataSetChanged()
+            refreshHandler.postDelayed(this, 1000)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView(); _binding = null
+
+        refreshHandler.removeCallbacksAndMessages(null)
+    }
 }

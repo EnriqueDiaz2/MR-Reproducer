@@ -1,17 +1,22 @@
 package figueroa.enrique.reproducers.ui.player
 
 import android.content.*
-import android.graphics.Bitmap
 import android.os.*
+import android.view.View
+import android.widget.SeekBar
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
-import com.bumptech.glide.Glide
 import figueroa.enrique.reproducers.R
 import figueroa.enrique.reproducers.data.db.AppDatabase
+import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.ActivityPlayerBinding
 import figueroa.enrique.reproducers.service.MusicService
+import figueroa.enrique.reproducers.util.AppPreferences
+import figueroa.enrique.reproducers.util.ArtworkResolver
+import figueroa.enrique.reproducers.util.CoverCarousel
 import kotlinx.coroutines.*
 
 @UnstableApi
@@ -92,12 +97,12 @@ class PlayerActivity : AppCompatActivity() {
 
         binding.btnLyrics.setOnClickListener { toggleLyrics() }
 
-        binding.seekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {}
-            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {
+        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {
                 isUserSeeking = true
             }
-            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 musicService?.seekTo(seekBar!!.progress.toLong())
                 isUserSeeking = false
             }
@@ -120,6 +125,28 @@ class PlayerActivity : AppCompatActivity() {
         binding.playerArtist.text = song.artist
 
         CoroutineScope(Dispatchers.Main).launch {
+            val sources = withContext(Dispatchers.IO) {
+                ArtworkResolver.sourcesFor(this@PlayerActivity, song, musicService)
+            }
+            if (AppPreferences.isAppCarouselEnabled(this@PlayerActivity) && sources.size > 1) {
+                CoverCarousel.start(binding.playerCover, sources)
+            } else {
+                CoverCarousel.applyStatic(binding.playerCover, sources)
+            }
+        }
+
+        binding.btnFavoritePlayer.setImageResource(
+            if (song.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+        )
+        updatePlayPauseIcon()
+    }
+
+    /*private fun updateUI() {
+        val song = currentSong ?: return
+        binding.playerTitle.text = song.title
+        binding.playerArtist.text = song.artist
+
+        CoroutineScope(Dispatchers.Main).launch {
             val artwork = withContext(Dispatchers.IO) { loadSafeArtwork(song) }
 
             if (artwork != null) {
@@ -134,7 +161,7 @@ class PlayerActivity : AppCompatActivity() {
             if (song.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
         )
         updatePlayPauseIcon()
-    }
+    }*/
 
     private fun syncShuffleRepeatIcons() {
         val service = musicService ?: return
@@ -158,7 +185,7 @@ class PlayerActivity : AppCompatActivity() {
         binding.btnRepeat.alpha = if (service.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
     }*/
 
-    private suspend fun loadSafeArtwork(song: figueroa.enrique.reproducers.data.model.Song): Bitmap? {
+    /*private suspend fun loadSafeArtwork(song: Song): Bitmap? {
         val albumCoverPath = repo.albumById(song.albumId)?.coverImagePath
         val albumCover = albumCoverPath?.let { path ->
             try {
@@ -199,7 +226,7 @@ class PlayerActivity : AppCompatActivity() {
             var x = 0
             while (x < bitmap.width) {
                 val pixel = bitmap.getPixel(x, y)
-                val brightness = (android.graphics.Color.red(pixel) + android.graphics.Color.green(pixel) + android.graphics.Color.blue(pixel)) / 3.0
+                val brightness = (Color.red(pixel) + Color.green(pixel) + Color.blue(pixel)) / 3.0
                 sum += brightness
                 sumSquares += brightness * brightness
                 samples++
@@ -211,12 +238,12 @@ class PlayerActivity : AppCompatActivity() {
         val mean = sum / samples
         val variance = (sumSquares / samples) - (mean * mean)
         return (mean > 240.0 && variance < 120.0) || (mean < 15.0 && variance < 120.0)
-    }
+    }*/
 
-    private fun showAddToPlaylistDialog(song: figueroa.enrique.reproducers.data.model.Song) {
+    private fun showAddToPlaylistDialog(song: Song) {
         repo.allPlaylists.observe(this) { playlists ->
             if (playlists.isEmpty()) {
-                android.widget.Toast.makeText(this, getString(R.string.first_create_playlist), android.widget.Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, getString(R.string.first_create_playlist), Toast.LENGTH_SHORT).show()
                 return@observe
             }
             val names = playlists.map { it.name }.toTypedArray()
@@ -227,7 +254,7 @@ class PlayerActivity : AppCompatActivity() {
                     CoroutineScope(Dispatchers.IO).launch {
                         repo.addSongToPlaylist(playlist.id, song.id)
                         withContext(Dispatchers.Main) {
-                            android.widget.Toast.makeText(this@PlayerActivity, getString(R.string.added_to_playlist, playlist.name), android.widget.Toast.LENGTH_SHORT).show()
+                            Toast.makeText(this@PlayerActivity, getString(R.string.added_to_playlist, playlist.name), Toast.LENGTH_SHORT).show()
                         }
                     }
                 }
@@ -319,8 +346,8 @@ class PlayerActivity : AppCompatActivity() {
 
     private fun toggleLyrics() {
         showingLyrics = !showingLyrics
-        binding.lyricsView.visibility = if (showingLyrics) android.view.View.VISIBLE else android.view.View.GONE
-        binding.playerCover.visibility = if (showingLyrics) android.view.View.GONE else android.view.View.VISIBLE
+        binding.lyricsView.visibility = if (showingLyrics) View.VISIBLE else View.GONE
+        binding.playerCover.visibility = if (showingLyrics) View.GONE else View.VISIBLE
         if (showingLyrics) fetchOrLoadLyrics()
     }
 

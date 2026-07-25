@@ -1,7 +1,10 @@
 package figueroa.enrique.reproducers.ui.favorites
 
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.*
 import androidx.annotation.OptIn
 import androidx.fragment.app.Fragment
@@ -19,6 +22,7 @@ class FavoritesFragment : Fragment() {
     private var _binding: FragmentFavoritesBinding? = null
     private val binding get() = _binding!!
     private lateinit var repo: MusicRepository
+    private lateinit var adapter: SongAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentFavoritesBinding.inflate(inflater, container, false)
@@ -29,7 +33,7 @@ class FavoritesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
 
-        val adapter = SongAdapter(
+        adapter = SongAdapter(
             onClick = { song, _ ->
                 val list = repo.favorites.value ?: listOf()
                 val index = list.indexOf(song)
@@ -48,7 +52,22 @@ class FavoritesFragment : Fragment() {
         binding.recyclerFavorites.layoutManager = LinearLayoutManager(requireContext())
         binding.recyclerFavorites.adapter = adapter
         repo.favorites.observe(viewLifecycleOwner) { adapter.submitList(it) }
+
+        refreshHandler.post(refreshRunnable)
     }
 
-    override fun onDestroyView() { super.onDestroyView(); _binding = null }
+    private val refreshHandler = Handler(Looper.getMainLooper())
+    private val refreshRunnable = object : Runnable {
+        @SuppressLint("NotifyDataSetChanged")
+        override fun run() {
+            adapter.notifyDataSetChanged()
+            refreshHandler.postDelayed(this, 1000)
+        }
+    }
+
+    override fun onDestroyView() {
+        super.onDestroyView(); _binding = null
+
+        refreshHandler.removeCallbacksAndMessages(null)
+    }
 }

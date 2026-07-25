@@ -1,7 +1,6 @@
 package figueroa.enrique.reproducers.ui.main
 
 import android.content.*
-import android.graphics.Bitmap
 import android.os.*
 import android.view.View
 import androidx.annotation.OptIn
@@ -9,7 +8,6 @@ import androidx.annotation.RequiresApi
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
-import com.bumptech.glide.Glide
 import figueroa.enrique.reproducers.data.db.AppDatabase
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.ActivityMainBinding
@@ -17,6 +15,16 @@ import figueroa.enrique.reproducers.service.MusicService
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
 import figueroa.enrique.reproducers.ui.songs.SongsFragment
 import figueroa.enrique.reproducers.R
+import figueroa.enrique.reproducers.ui.album.AlbumsFragment
+import figueroa.enrique.reproducers.ui.artist.ArtistsFragment
+import figueroa.enrique.reproducers.ui.favorites.FavoritesFragment
+import figueroa.enrique.reproducers.ui.playlist.PlaylistsFragment
+import figueroa.enrique.reproducers.ui.settings.SettingsFragment
+import androidx.core.app.ActivityCompat
+import android.Manifest
+import figueroa.enrique.reproducers.util.AppPreferences
+import figueroa.enrique.reproducers.util.ArtworkResolver
+import figueroa.enrique.reproducers.util.CoverCarousel
 import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
@@ -60,7 +68,7 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setOnMenuItemClickListener { item ->
             if (item.itemId == R.id.action_settings) {
                 supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragmentContainer, figueroa.enrique.reproducers.ui.settings.SettingsFragment())
+                    .replace(R.id.fragmentContainer, SettingsFragment())
                     .addToBackStack(null)
                     .commit()
                 true
@@ -70,11 +78,11 @@ class MainActivity : AppCompatActivity() {
         binding.bottomNav.setOnItemSelectedListener { item ->
             val fragment = when (item.itemId) {
                 R.id.nav_songs -> SongsFragment()
-                R.id.nav_albums -> figueroa.enrique.reproducers.ui.album.AlbumsFragment()
-                R.id.nav_artists -> figueroa.enrique.reproducers.ui.artist.ArtistsFragment()
-                R.id.nav_playlists -> figueroa.enrique.reproducers.ui.playlist.PlaylistsFragment()
-                R.id.nav_favorites -> figueroa.enrique.reproducers.ui.favorites.FavoritesFragment()
-                //R.id.nav_settings -> figueroa.enrique.reproducers.ui.settings.SettingsFragment()
+                R.id.nav_albums -> AlbumsFragment()
+                R.id.nav_artists -> ArtistsFragment()
+                R.id.nav_playlists -> PlaylistsFragment()
+                R.id.nav_favorites -> FavoritesFragment()
+                //R.id.nav_settings -> SettingsFragment()
                 else -> SongsFragment()
             }
             supportFragmentManager.beginTransaction()
@@ -86,7 +94,7 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setOnMenuItemClickListener { item ->
             if (item.itemId == R.id.action_settings) {
                 supportFragmentManager.beginTransaction()
-                    .replace(R.id.fragmentContainer, figueroa.enrique.reproducers.ui.settings.SettingsFragment())
+                    .replace(R.id.fragmentContainer, SettingsFragment())
                     .addToBackStack("settings")
                     .commit()
                 true
@@ -132,6 +140,36 @@ class MainActivity : AppCompatActivity() {
 
         if (song == null) {
             binding.miniPlayerRoot.root.visibility = View.GONE
+            CoverCarousel.stop(binding.miniPlayerRoot.miniCover)
+            return
+        }
+
+        binding.miniPlayerRoot.root.visibility = View.VISIBLE
+        binding.miniPlayerRoot.miniTitle.text = song.title
+        binding.miniPlayerRoot.miniArtist.text = song.artist
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val sources = withContext(Dispatchers.IO) {
+                ArtworkResolver.sourcesFor(this@MainActivity, song, service)
+            }
+            if (AppPreferences.isAppCarouselEnabled(this@MainActivity) && sources.size > 1) {
+                CoverCarousel.start(binding.miniPlayerRoot.miniCover, sources)
+            } else {
+                CoverCarousel.applyStatic(binding.miniPlayerRoot.miniCover, sources)
+            }
+        }
+
+        binding.miniPlayerRoot.miniPlayPause.setImageResource(
+            if (service.isPlaying()) R.drawable.ic_pause else R.drawable.ic_play
+        )
+    }
+
+    /*private fun updateMiniPlayer() {
+        val service = musicService ?: return
+        val song = service.currentPlaylist.getOrNull(service.currentIndex)
+
+        if (song == null) {
+            binding.miniPlayerRoot.root.visibility = View.GONE
             return
         }
 
@@ -154,7 +192,7 @@ class MainActivity : AppCompatActivity() {
         binding.miniPlayerRoot.miniPlayPause.setImageResource(
             if (service.isPlaying()) R.drawable.ic_pause else R.drawable.ic_play
         )
-    }
+    }*/
 
     private fun startMiniPlayerUpdates() {
         handler.post(object : Runnable {
@@ -180,7 +218,8 @@ class MainActivity : AppCompatActivity() {
         handler.removeCallbacksAndMessages(null)
     }
 
-    private suspend fun loadSafeArtwork(song: figueroa.enrique.reproducers.data.model.Song): Bitmap? {
+    /*
+    private suspend fun loadSafeArtwork(song: Song): Bitmap? {
         val albumCoverPath = repo.albumById(song.albumId)?.coverImagePath
         val albumCover = albumCoverPath?.let { path ->
             try {
@@ -222,7 +261,7 @@ class MainActivity : AppCompatActivity() {
             var x = 0
             while (x < bitmap.width) {
                 val pixel = bitmap.getPixel(x, y)
-                val brightness = (android.graphics.Color.red(pixel) + android.graphics.Color.green(pixel) + android.graphics.Color.blue(pixel)) / 3.0
+                val brightness = (Color.red(pixel) + Color.green(pixel) + Color.blue(pixel)) / 3.0
                 sum += brightness
                 sumSquares += brightness * brightness
                 samples++
@@ -234,17 +273,17 @@ class MainActivity : AppCompatActivity() {
         val mean = sum / samples
         val variance = (sumSquares / samples) - (mean * mean)
         return (mean > 240.0 && variance < 120.0) || (mean < 15.0 && variance < 120.0)
-    }
+    }*/
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNeededPermissions() {
-        val perms = mutableListOf(android.Manifest.permission.POST_NOTIFICATIONS)
+        val perms = mutableListOf(Manifest.permission.POST_NOTIFICATIONS)
         if (Build.VERSION.SDK_INT >= 33) {
-            perms.add(android.Manifest.permission.READ_MEDIA_AUDIO)
-            perms.add(android.Manifest.permission.READ_MEDIA_VIDEO)
+            perms.add(Manifest.permission.READ_MEDIA_AUDIO)
+            perms.add(Manifest.permission.READ_MEDIA_VIDEO)
         } else {
-            perms.add(android.Manifest.permission.READ_EXTERNAL_STORAGE)
+            perms.add(Manifest.permission.READ_EXTERNAL_STORAGE)
         }
-        androidx.core.app.ActivityCompat.requestPermissions(this, perms.toTypedArray(), 100)
+        ActivityCompat.requestPermissions(this, perms.toTypedArray(), 100)
     }
 }

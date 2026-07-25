@@ -9,6 +9,7 @@ import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
+import kotlinx.coroutines.Dispatchers
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import androidx.media3.common.MediaItem
@@ -32,9 +33,15 @@ class MusicService : Service() {
 
     private lateinit var player: ExoPlayer
     private lateinit var mediaSession: MediaSessionCompat
+
     private val binder = MusicBinder()
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val repo by lazy { MusicRepository(AppDatabase.getDatabase(this)) }
+
+    private val notifHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private var notifCarouselRunnable: Runnable? = null
+    private var notifSources: List<Bitmap> = emptyList()
+    private var notifIndex = 0
 
     private var cachedArtworkPath: String? = null
     private var cachedArtwork: Bitmap? = null
@@ -258,6 +265,79 @@ class MusicService : Service() {
                 .build()
         )
 
+        serviceScope.launch {
+            val album = repo.albumById(song.albumId)
+            val artist = repo.artistByName(song.artist)
+            val embedded = loadArtwork(song)
+
+            val bitmaps = mutableListOf<Bitmap>()
+            uriToBitmap(album?.coverImagePath)?.let { bitmaps.add(it) }
+            embedded?.let { bitmaps.add(it) }
+            uriToBitmap(artist?.imagePath)?.let { bitmaps.add(it) }
+
+            withContext(Dispatchers.Main) {
+                notifSources = bitmaps
+                notifIndex = 0
+                stopNotifCarousel()
+
+                if (AppPreferences.isNotificationCarouselEnabled(this@MusicService) && notifSources.size > 1) {
+                    startNotifCarousel(song)
+                } else {
+                    postNotification(song, notifSources.firstOrNull())
+                }
+            }
+        }
+    }
+
+    private fun uriToBitmap(uriString: String?): Bitmap? {
+        if (uriString.isNullOrBlank()) return null
+        return try {
+            contentResolver.openInputStream(Uri.parse(uriString))?.use { BitmapFactory.decodeStream(it) }
+        } catch (_: Exception) { null }
+    }
+
+    private fun startNotifCarousel(song: Song) {
+        val runnable = object : Runnable {
+            override fun run() {
+                if (notifSources.isEmpty()) return
+                postNotification(song, notifSources[notifIndex % notifSources.size])
+                notifIndex++
+                notifHandler.postDelayed(this, 3500)
+            }
+        }
+        notifCarouselRunnable = runnable
+        notifHandler.post(runnable)
+    }
+
+    private fun stopNotifCarousel() {
+        notifCarouselRunnable?.let { notifHandler.removeCallbacks(it) }
+        notifCarouselRunnable = null
+    }
+
+    /*private fun refreshSessionAndNotification() {
+        val song = currentSong() ?: return
+
+        val state = if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
+        val actions = PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or
+                PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
+                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_SEEK_TO
+
+        mediaSession.setPlaybackState(
+            PlaybackStateCompat.Builder()
+                .setActions(actions)
+                .setState(state, player.currentPosition, player.playbackParameters.speed)
+                .build()
+        )
+
+        val duration = player.duration
+        mediaSession.setMetadata(
+            MediaMetadataCompat.Builder()
+                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
+                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
+                .apply { if (duration > 0) putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration) }
+                .build()
+        )
+
         // Prioridad de imagen: portada de álbum > embebida en el archivo > ninguna (ícono por defecto)
         serviceScope.launch {
             val albumCover = repo.albumById(song.albumId)?.coverImagePath
@@ -273,7 +353,7 @@ class MusicService : Service() {
                 postNotification(song, bitmap)
             }
         }
-    }
+    }*/
 
     @OptIn(UnstableApi::class)
     private fun postNotification(song: Song, largeIcon: Bitmap?) {
@@ -321,6 +401,7 @@ class MusicService : Service() {
     }
 
     override fun onDestroy() {
+        stopNotifCarousel()
         mediaSession.release()
         player.release()
         serviceScope.cancel()

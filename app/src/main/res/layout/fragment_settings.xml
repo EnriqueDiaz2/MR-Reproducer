@@ -79,6 +79,22 @@
             android:textColor="@color/textSecondary"
             android:text="@string/experimentaltext" />
 
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchAppCarousel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/textSecondary"
+            android:text="@string/carousel_in_app" />
+
+        <com.google.android.material.switchmaterial.SwitchMaterial
+            android:id="@+id/switchNotificationCarousel"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:textColor="@color/textSecondary"
+            android:text="@string/carousel_in_notification" />
+
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
