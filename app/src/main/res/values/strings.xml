@@ -9,6 +9,8 @@
     <string name="title">Título</string>
     <string name="artist">Artista</string>
     <string name="album">Álbum</string>
+    <string name="lyrics_needs_artist">Edita la canción y pon el artista real para poder buscar la letra</string>
+    <string name="lyrics_imported">Letra importada correctamente</string>
     <string name="appearance" tools:ignore="MissingTranslation">Apariencia</string>
     <string name="appearance_light" tools:ignore="MissingTranslation">Claro</string>
     <string name="appearance_dark" tools:ignore="MissingTranslation">Oscuro</string>
@@ -34,7 +36,10 @@
     <string name="add_to_playlist_option">Agregar a lista de reproducción</string>
     <string name="song_updated">Canción actualizada</string>
     <string name="searching_lyrics">Buscando letra...</string>
-    <string name="no_lyrics_found">No se encontró la letra</string>
+    <string name="no_lyrics_found">No se encontró la letra en línea para esta canción</string>
+    <string name="lyrics_warning_title">Aviso sobre la letra</string>
+    <string name="lyrics_warning_message">Es posible que no se encuentre la letra de esta canción en línea. Si no aparece, puedes importarla tú mismo con el botón de importar letra.</string>
+    <string name="ok">Entendido</string>
     <string name="selection_cancelled">Selección cancelada</string>
     <string name="no_file_selected">No se seleccionó ningún archivo</string>
     <string name="could_not_read_folder">No se pudo leer la carpeta</string>

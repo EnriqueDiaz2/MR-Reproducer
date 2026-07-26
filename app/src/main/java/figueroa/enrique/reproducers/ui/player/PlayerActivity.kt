@@ -5,6 +5,7 @@ import android.os.*
 import android.view.View
 import android.widget.SeekBar
 import android.widget.Toast
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
@@ -18,6 +19,7 @@ import figueroa.enrique.reproducers.util.AppPreferences
 import figueroa.enrique.reproducers.util.ArtworkResolver
 import figueroa.enrique.reproducers.util.CoverCarousel
 import kotlinx.coroutines.*
+import java.io.File
 
 @UnstableApi
 class PlayerActivity : AppCompatActivity() {
@@ -28,6 +30,7 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var repo: MusicRepository
     private var showingLyrics = false
     private var isUserSeeking = false
+    private var lyricsWarningShown = false
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
@@ -63,8 +66,6 @@ class PlayerActivity : AppCompatActivity() {
                 binding.btnShuffle.alpha = if (it.isShuffle) 1f else 0.4f
             }
         }
-
-
 
         binding.btnRepeat.setOnClickListener {
             musicService?.let {
@@ -108,13 +109,47 @@ class PlayerActivity : AppCompatActivity() {
             }
         })
 
-        /*binding.seekBar.setOnSeekBarChangeListener(object : android.widget.SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {}
-            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
-            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {
-                musicService?.seekTo(seekBar!!.progress.toLong())
+        binding.btnImportLyrics.setOnClickListener {
+            lyricsImportLauncher.launch(arrayOf("text/*"))
+        }
+    }
+
+    private val lyricsImportLauncher = registerForActivityResult(
+        ActivityResultContracts.OpenDocument()
+    ) { uri ->
+        uri?.let { importLyricsFile(it) }
+    }
+
+    private fun importLyricsFile(uri: android.net.Uri) {
+        val song = currentSong ?: return
+        CoroutineScope(Dispatchers.IO).launch {
+            try {
+                val text = contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
+                if (text.isNullOrBlank()) {
+                    withContext(Dispatchers.Main) {
+                        Toast.makeText(this@PlayerActivity, getString(R.string.no_lyrics_found), Toast.LENGTH_SHORT).show()
+                    }
+                    return@launch
+                }
+                // Guarda una copia local para no depender del URI externo
+                val fileName = "lyrics_${song.id}.txt"
+                val internalFile = File(filesDir, fileName)
+                internalFile.writeText(text)
+
+                val updatedSong = song.copy(lyricsPath = internalFile.absolutePath)
+                repo.updateSong(updatedSong)
+                musicService?.updateCurrentSong(updatedSong)
+
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@PlayerActivity, getString(R.string.lyrics_imported), Toast.LENGTH_SHORT).show()
+                    if (showingLyrics) fetchOrLoadLyrics()
+                }
+            } catch (e: Exception) {
+                withContext(Dispatchers.Main) {
+                    Toast.makeText(this@PlayerActivity, "Error: ${e.message}", Toast.LENGTH_LONG).show()
+                }
             }
-        })*/
+        }
     }
 
     private val currentSong get() = musicService?.currentPlaylist?.getOrNull(musicService?.currentIndex ?: 0)
@@ -141,28 +176,6 @@ class PlayerActivity : AppCompatActivity() {
         updatePlayPauseIcon()
     }
 
-    /*private fun updateUI() {
-        val song = currentSong ?: return
-        binding.playerTitle.text = song.title
-        binding.playerArtist.text = song.artist
-
-        CoroutineScope(Dispatchers.Main).launch {
-            val artwork = withContext(Dispatchers.IO) { loadSafeArtwork(song) }
-
-            if (artwork != null) {
-                binding.playerCover.imageTintList = null
-                binding.playerCover.setImageBitmap(artwork)
-            } else {
-                binding.playerCover.imageTintList = ContextCompat.getColorStateList(this@PlayerActivity, R.color.iconTint)
-                binding.playerCover.setImageResource(R.drawable.ic_music_note)
-            }
-        }
-        binding.btnFavoritePlayer.setImageResource(
-            if (song.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
-        )
-        updatePlayPauseIcon()
-    }*/
-
     private fun syncShuffleRepeatIcons() {
         val service = musicService ?: return
         binding.btnShuffle.alpha = if (service.isShuffle) 1f else 0.4f
@@ -173,72 +186,6 @@ class PlayerActivity : AppCompatActivity() {
         binding.btnRepeat.setImageResource(repeatIcon)
         binding.btnRepeat.alpha = if (service.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
     }
-
-    /*private fun syncShuffleRepeatIcons() {
-        val service = musicService ?: return
-        binding.btnShuffle.alpha = if (service.isShuffle) 1f else 0.4f
-        val repeatIcon = when (service.repeatMode) {
-            MusicService.REPEAT_ONE -> R.drawable.ic_repeat_one
-            else -> R.drawable.ic_repeat
-        }
-        binding.btnRepeat.setImageResource(repeatIcon)
-        binding.btnRepeat.alpha = if (service.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
-    }*/
-
-    /*private suspend fun loadSafeArtwork(song: Song): Bitmap? {
-        val albumCoverPath = repo.albumById(song.albumId)?.coverImagePath
-        val albumCover = albumCoverPath?.let { path ->
-            try {
-                Glide.with(this@PlayerActivity)
-                    .asBitmap()
-                    .load(path)
-                    .frame(1000000)
-                    .submit()
-                    .get()
-            } catch (e: Exception) {
-                null
-            }
-        }
-
-        if (albumCover != null && !isLikelyBlankArtwork(albumCover)) {
-            return albumCover
-        }
-
-        val embedded = musicService?.loadArtwork(song)
-        if (embedded != null && !isLikelyBlankArtwork(embedded)) {
-            return embedded
-        }
-
-        return null
-    }
-
-    private fun isLikelyBlankArtwork(bitmap: Bitmap): Boolean {
-        if (bitmap.width <= 2 || bitmap.height <= 2) return true
-
-        val stepX = (bitmap.width / 5).coerceAtLeast(1)
-        val stepY = (bitmap.height / 5).coerceAtLeast(1)
-        var samples = 0
-        var sum = 0.0
-        var sumSquares = 0.0
-
-        var y = 0
-        while (y < bitmap.height) {
-            var x = 0
-            while (x < bitmap.width) {
-                val pixel = bitmap.getPixel(x, y)
-                val brightness = (Color.red(pixel) + Color.green(pixel) + Color.blue(pixel)) / 3.0
-                sum += brightness
-                sumSquares += brightness * brightness
-                samples++
-                x += stepX
-            }
-            y += stepY
-        }
-
-        val mean = sum / samples
-        val variance = (sumSquares / samples) - (mean * mean)
-        return (mean > 240.0 && variance < 120.0) || (mean < 15.0 && variance < 120.0)
-    }*/
 
     private fun showAddToPlaylistDialog(song: Song) {
         repo.allPlaylists.observe(this) { playlists ->
@@ -262,18 +209,6 @@ class PlayerActivity : AppCompatActivity() {
                 .show()
         }
     }
-
-    /*private fun updateUI() {
-        val song = currentSong ?: return
-        binding.playerTitle.text = song.title
-        binding.playerArtist.text = song.artist
-        Glide.with(this).load(song.filePath).placeholder(R.drawable.ic_music_note).into(binding.playerCover)
-        binding.btnFavoritePlayer.setImageResource(
-            if (song.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
-        )
-        updatePlayPauseIcon()
-        binding.seekBar.max = musicService?.getDuration()?.toInt() ?: 0
-    }*/
 
     private fun updatePlayPauseIcon() {
         val playing = musicService?.isPlaying() == true
@@ -309,46 +244,36 @@ class PlayerActivity : AppCompatActivity() {
         })
     }
 
-    /*private fun startProgressUpdates() {
-        handler.post(object : Runnable {
-            override fun run() {
-                val service = musicService
-                if (service != null && service.isReady() && !isUserSeeking) {
-                    val duration = service.getDuration()
-                    if (duration > 0) {
-                        if (binding.seekBar.max != duration.toInt()) {
-                            binding.seekBar.max = duration.toInt()
-                        }
-                        val current = service.getCurrentPosition().toInt()
-                        // Animación suave del progreso (API 26+)
-                        if (android.os.Build.VERSION.SDK_INT >= 26) {
-                            binding.seekBar.setProgress(current, true)
-                        } else {
-                            binding.seekBar.progress = current
-                        }
-                    }
-                }
-                handler.postDelayed(this, 500)
-            }
-        })
-    }*/
-
-    /*private fun startProgressUpdates() {
-        handler.post(object : Runnable {
-            override fun run() {
-                musicService?.let {
-                    binding.seekBar.progress = it.getCurrentPosition().toInt()
-                }
-                handler.postDelayed(this, 500)
-            }
-        })
-    }*/
-
     private fun toggleLyrics() {
+        // Si vamos a MOSTRAR la letra y aún no se ha avisado en esta sesión, mostrar el aviso primero
+        if (!showingLyrics && !lyricsWarningShown) {
+            showLyricsWarningDialog()
+            return
+        }
+        proceedToggleLyrics()
+    }
+
+    private fun proceedToggleLyrics() {
         showingLyrics = !showingLyrics
         binding.lyricsView.visibility = if (showingLyrics) View.VISIBLE else View.GONE
         binding.playerCover.visibility = if (showingLyrics) View.GONE else View.VISIBLE
         if (showingLyrics) fetchOrLoadLyrics()
+    }
+
+    private fun showLyricsWarningDialog() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.lyrics_warning_title))
+            .setMessage(getString(R.string.lyrics_warning_message))
+            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                lyricsWarningShown = true
+                dialog.dismiss()
+                proceedToggleLyrics()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
+                dialog.dismiss()
+            }
+            .setCancelable(true)
+            .show()
     }
 
     private fun fetchOrLoadLyrics() {
@@ -356,12 +281,17 @@ class PlayerActivity : AppCompatActivity() {
         binding.lyricsView.text = getString(R.string.searching_lyrics)
         CoroutineScope(Dispatchers.IO).launch {
             val lyrics = if (song.lyricsPath != null) {
-                java.io.File(song.lyricsPath).readText()
+                try { File(song.lyricsPath).readText() } catch (e: Exception) { null }
             } else {
                 LyricsFetcher.searchOnline(song.title, song.artist)
             }
             withContext(Dispatchers.Main) {
-                binding.lyricsView.text = lyrics ?: getString(R.string.no_lyrics_found)
+                binding.lyricsView.text = lyrics ?: run {
+                    if (song.artist.equals("Desconocido", ignoreCase = true))
+                        getString(R.string.lyrics_needs_artist)
+                    else
+                        getString(R.string.no_lyrics_found)
+                }
             }
         }
     }

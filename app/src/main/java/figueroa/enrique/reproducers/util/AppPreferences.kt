@@ -5,6 +5,8 @@ import android.content.Context
 object AppPreferences {
     private const val PREFS = "app_prefs"
     private const val KEY_ADAPTIVE_SHUFFLE = "adaptive_shuffle"
+    private const val KEY_APP_CAROUSEL = "app_carousel_enabled"
+    private const val KEY_NOTIF_CAROUSEL = "notification_carousel_enabled"
 
     fun isAdaptiveShuffleEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
@@ -14,9 +16,6 @@ object AppPreferences {
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
             .edit().putBoolean(KEY_ADAPTIVE_SHUFFLE, enabled).apply()
     }
-
-    private const val KEY_APP_CAROUSEL = "app_carousel_enabled"
-    private const val KEY_NOTIF_CAROUSEL = "notification_carousel_enabled"
 
     fun isAppCarouselEnabled(context: Context): Boolean =
         context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)

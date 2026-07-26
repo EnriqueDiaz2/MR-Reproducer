@@ -67,23 +67,10 @@ class SongsFragment : Fragment() {
                     PlayerActivity::class.java)
                 )
 
-                /*val service = (activity as? MainActivity)?.musicService
-                if (service == null) {
-                    android.widget.Toast.makeText(requireContext(), getString(R.string.player_not_ready), android.widget.Toast.LENGTH_SHORT).show()
-                    return@SongAdapter
-                }
-                val list = viewModel.songs.value ?: listOf()
-                ContextCompat.startForegroundService(
-                    requireContext(),
-                    android.content.Intent(requireContext(), figueroa.enrique.reproducers.service.MusicService::class.java)
-                )
-                service.playSong(song, list, index)
-                startActivity(android.content.Intent(requireContext(), PlayerActivity::class.java))*/
             },
             onFavoriteClick = { song -> viewModel.toggleFavorite(song) },
             onMoreClick = { song -> showSongOptionsDialog(song) },
             musicService = { (activity as? MainActivity)?.musicService }
-            //onMoreClick = { song -> showAddToPlaylistDialog(song) }
         )
 
         binding.recyclerSongs.layoutManager = LinearLayoutManager(requireContext())
@@ -92,6 +79,8 @@ class SongsFragment : Fragment() {
         viewModel.songs.observe(viewLifecycleOwner) { songs ->
             adapter.submitList(songs)
         }
+
+        refreshHandler.post(refreshRunnable)
     }
 
     private val refreshHandler = Handler(Looper.getMainLooper())

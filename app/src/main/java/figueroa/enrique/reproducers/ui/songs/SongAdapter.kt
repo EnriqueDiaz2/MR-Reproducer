@@ -16,6 +16,7 @@ import figueroa.enrique.reproducers.service.MusicService
 import figueroa.enrique.reproducers.util.AppPreferences
 import figueroa.enrique.reproducers.util.ArtworkResolver
 import figueroa.enrique.reproducers.util.CoverCarousel
+import android.util.Log
 import kotlinx.coroutines.*
 
 class SongAdapter(
@@ -56,6 +57,8 @@ class SongAdapter(
                 } else {
                     CoverCarousel.applyStatic(holder.binding.songCover, sources)
                 }
+
+                Log.d("CarouselDebug", "Canción=${song.title} fuentes=${sources.size} carouselOn=${AppPreferences.isAppCarouselEnabled(context)}")
             }
         } else {
             CoverCarousel.stop(holder.binding.songCover)

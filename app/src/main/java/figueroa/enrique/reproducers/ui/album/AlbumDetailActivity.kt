@@ -5,6 +5,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import androidx.recyclerview.widget.LinearLayoutManager
@@ -14,9 +15,9 @@ import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.ActivityDetailBinding
 import figueroa.enrique.reproducers.ui.base.BasePlayerActivity
-import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
 import figueroa.enrique.reproducers.ui.songs.SongAdapter
+import figueroa.enrique.reproducers.util.EditSongDialog
 import kotlinx.coroutines.*
 
 class AlbumDetailActivity : BasePlayerActivity() {
@@ -50,8 +51,8 @@ class AlbumDetailActivity : BasePlayerActivity() {
             },
             onFavoriteClick = { song -> CoroutineScope(Dispatchers.IO).launch { repo.toggleFavorite(song) } },
             onMoreClick = { song ->
-                figueroa.enrique.reproducers.util.EditSongDialog.show(this, song, repo) {
-                    android.widget.Toast.makeText(this, getString(R.string.song_updated), android.widget.Toast.LENGTH_SHORT).show()
+                EditSongDialog.show(this, song, repo) {
+                    Toast.makeText(this, getString(R.string.song_updated), Toast.LENGTH_SHORT).show()
                 }
             },
             musicService = { musicService }
@@ -74,5 +75,10 @@ class AlbumDetailActivity : BasePlayerActivity() {
             adapter.notifyDataSetChanged()
             refreshHandler.postDelayed(this, 1000)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        refreshHandler.removeCallbacksAndMessages(null)
     }
 }

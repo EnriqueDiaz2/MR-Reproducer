@@ -15,6 +15,8 @@
     <string name="title">Title</string>
     <string name="artist">Artist</string>
     <string name="album">Album</string>
+    <string name="lyrics_needs_artist">Edit the song and enter the actual artist to search for the lyrics</string>
+    <string name="lyrics_imported">Lyrics successfully imported</string>
     <string name="playlist_name_hint">Playlist name</string>
     <string name="new_playlist_title">New playlist</string>
     <string name="experimental">Experimental</string>
@@ -31,7 +33,10 @@
     <string name="add_to_playlist_option">Add to playlist</string>
     <string name="song_updated">Song updated</string>
     <string name="searching_lyrics">Searching lyrics...</string>
-    <string name="no_lyrics_found">Lyrics not found</string>
+    <string name="no_lyrics_found">No lyrics found online for this song</string>
+    <string name="lyrics_warning_title">Lyrics Warning</string>
+    <string name="lyrics_warning_message">The lyrics for this song might not be available online. If they don\'t appear, you can import them yourself using the import lyrics button.</string>
+    <string name="ok">Got it</string>
     <string name="selection_cancelled">Selection cancelled</string>
     <string name="no_file_selected">No file selected</string>
     <string name="could_not_read_folder">Could not read the folder</string>

@@ -6,6 +6,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.view.*
+import android.widget.Toast
 import androidx.annotation.OptIn
 import androidx.fragment.app.Fragment
 import androidx.media3.common.util.UnstableApi
@@ -16,6 +17,7 @@ import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.FragmentFavoritesBinding
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
 import figueroa.enrique.reproducers.ui.songs.SongAdapter
+import figueroa.enrique.reproducers.util.EditSongDialog
 import kotlinx.coroutines.*
 
 class FavoritesFragment : Fragment() {
@@ -42,8 +44,8 @@ class FavoritesFragment : Fragment() {
             },
             onFavoriteClick = { song -> CoroutineScope(Dispatchers.IO).launch { repo.toggleFavorite(song) } },
             onMoreClick = { song ->
-                figueroa.enrique.reproducers.util.EditSongDialog.show(requireContext(), song, repo) {
-                    android.widget.Toast.makeText(requireContext(), "Canción actualizada", android.widget.Toast.LENGTH_SHORT).show()
+                EditSongDialog.show(requireContext(), song, repo) {
+                    Toast.makeText(requireContext(), "Canción actualizada", Toast.LENGTH_SHORT).show()
                 }
             },
             musicService = { (activity as? MainActivity)?.musicService }

@@ -53,6 +53,12 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        binding.toolbar.menu.findItem(R.id.action_settings)?.icon?.let {
+            it.mutate()
+            it.setTint(ContextCompat.getColor(this, R.color.iconTint))
+        }
+
         repo = MusicRepository(AppDatabase.getDatabase(this))
 
         requestNeededPermissions()
@@ -105,8 +111,12 @@ class MainActivity : AppCompatActivity() {
         supportFragmentManager.addOnBackStackChangedListener {
             val isInSettings = supportFragmentManager.backStackEntryCount > 0
             binding.toolbar.menu.findItem(R.id.action_settings)?.isVisible = !isInSettings
+
             binding.toolbar.navigationIcon = if (isInSettings) {
-                ContextCompat.getDrawable(this, R.drawable.ic_back)
+                ContextCompat.getDrawable(this, R.drawable.ic_back)?.apply {
+                    mutate()
+                    setTint(ContextCompat.getColor(this@MainActivity, R.color.iconTint))
+                }
             } else null
             binding.toolbar.setNavigationOnClickListener {
                 if (isInSettings) supportFragmentManager.popBackStack()
@@ -164,36 +174,6 @@ class MainActivity : AppCompatActivity() {
         )
     }
 
-    /*private fun updateMiniPlayer() {
-        val service = musicService ?: return
-        val song = service.currentPlaylist.getOrNull(service.currentIndex)
-
-        if (song == null) {
-            binding.miniPlayerRoot.root.visibility = View.GONE
-            return
-        }
-
-        binding.miniPlayerRoot.root.visibility = View.VISIBLE
-        binding.miniPlayerRoot.miniTitle.text = song.title
-        binding.miniPlayerRoot.miniArtist.text = song.artist
-
-        CoroutineScope(Dispatchers.Main).launch {
-            val artwork = withContext(Dispatchers.IO) { loadSafeArtwork(song) }
-
-            if (artwork != null) {
-                binding.miniPlayerRoot.miniCover.imageTintList = null
-                binding.miniPlayerRoot.miniCover.setImageBitmap(artwork)
-            } else {
-                binding.miniPlayerRoot.miniCover.imageTintList = ContextCompat.getColorStateList(this@MainActivity, R.color.iconTint)
-                binding.miniPlayerRoot.miniCover.setImageResource(R.drawable.ic_music_note)
-            }
-        }
-
-        binding.miniPlayerRoot.miniPlayPause.setImageResource(
-            if (service.isPlaying()) R.drawable.ic_pause else R.drawable.ic_play
-        )
-    }*/
-
     private fun startMiniPlayerUpdates() {
         handler.post(object : Runnable {
             override fun run() {
@@ -217,63 +197,6 @@ class MainActivity : AppCompatActivity() {
         if (bound) { unbindService(connection); bound = false }
         handler.removeCallbacksAndMessages(null)
     }
-
-    /*
-    private suspend fun loadSafeArtwork(song: Song): Bitmap? {
-        val albumCoverPath = repo.albumById(song.albumId)?.coverImagePath
-        val albumCover = albumCoverPath?.let { path ->
-            try {
-                Glide.with(this@MainActivity)
-                    .asBitmap()
-                    .load(path)
-                    .submit()
-                    .get()
-            } catch (_: Exception) {
-                null
-            }
-        }
-
-        if (albumCover != null && !isLikelyBlankArtwork(albumCover)) {
-            return albumCover
-        }
-
-        val embedded = serviceOrNull()?.loadArtwork(song)
-        if (embedded != null && !isLikelyBlankArtwork(embedded)) {
-            return embedded
-        }
-
-        return null
-    }
-
-    private fun serviceOrNull(): MusicService? = musicService
-
-    private fun isLikelyBlankArtwork(bitmap: Bitmap): Boolean {
-        if (bitmap.width <= 2 || bitmap.height <= 2) return true
-
-        val stepX = (bitmap.width / 5).coerceAtLeast(1)
-        val stepY = (bitmap.height / 5).coerceAtLeast(1)
-        var samples = 0
-        var sum = 0.0
-        var sumSquares = 0.0
-
-        var y = 0
-        while (y < bitmap.height) {
-            var x = 0
-            while (x < bitmap.width) {
-                val pixel = bitmap.getPixel(x, y)
-                val brightness = (Color.red(pixel) + Color.green(pixel) + Color.blue(pixel)) / 3.0
-                sum += brightness
-                sumSquares += brightness * brightness
-                samples++
-                x += stepX
-            }
-            y += stepY
-        }
-
-        val mean = sum / samples
-        val variance = (sumSquares / samples) - (mean * mean)
-        return (mean > 240.0 && variance < 120.0) || (mean < 15.0 && variance < 120.0)
-    }*/
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestNeededPermissions() {

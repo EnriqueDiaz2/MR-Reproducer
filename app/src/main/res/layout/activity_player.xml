@@ -28,6 +28,15 @@
             android:text="@string/view_lyrics"
             android:background="@drawable/bg_rounded_button"/>
 
+        <ImageButton
+            android:id="@+id/btnImportLyrics"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
+            android:layout_gravity="end"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_add"
+            app:tint="@color/iconTint" />
+
         <!-- Portada -->
         <ImageView
             android:id="@+id/playerCover"

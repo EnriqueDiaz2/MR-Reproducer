@@ -14,7 +14,6 @@ import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.databinding.ActivityDetailBinding
 import figueroa.enrique.reproducers.ui.base.BasePlayerActivity
-import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.ui.player.PlayerActivity
 import figueroa.enrique.reproducers.ui.songs.SongAdapter
 import figueroa.enrique.reproducers.util.EditSongDialog
@@ -44,8 +43,6 @@ class PlaylistDetailActivity : BasePlayerActivity() {
         binding.toolbar.setNavigationOnClickListener { finish() }
 
         repo = MusicRepository(AppDatabase.getDatabase(this))
-
-        //repo = MusicRepository(AppDatabase.getDatabase(requireContext()))
 
         adapter = SongAdapter(
             onClick = { song, index ->
@@ -77,5 +74,10 @@ class PlaylistDetailActivity : BasePlayerActivity() {
             adapter.notifyDataSetChanged()
             refreshHandler.postDelayed(this, 1000)
         }
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        refreshHandler.removeCallbacksAndMessages(null)
     }
 }

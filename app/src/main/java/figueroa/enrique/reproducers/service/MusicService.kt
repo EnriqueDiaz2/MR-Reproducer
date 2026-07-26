@@ -267,13 +267,13 @@ class MusicService : Service() {
 
         serviceScope.launch {
             val album = repo.albumById(song.albumId)
-            val artist = repo.artistByName(song.artist)
+            //val artist = repo.artistByName(song.artist)
             val embedded = loadArtwork(song)
 
             val bitmaps = mutableListOf<Bitmap>()
             uriToBitmap(album?.coverImagePath)?.let { bitmaps.add(it) }
             embedded?.let { bitmaps.add(it) }
-            uriToBitmap(artist?.imagePath)?.let { bitmaps.add(it) }
+            //uriToBitmap(artist?.imagePath)?.let { bitmaps.add(it) }
 
             withContext(Dispatchers.Main) {
                 notifSources = bitmaps
@@ -299,6 +299,12 @@ class MusicService : Service() {
     private fun startNotifCarousel(song: Song) {
         val runnable = object : Runnable {
             override fun run() {
+                // Si el usuario apagó el switch mientras el carrusel ya corría, se detiene aquí mismo
+                if (!AppPreferences.isNotificationCarouselEnabled(this@MusicService)) {
+                    stopNotifCarousel()
+                    postNotification(song, notifSources.firstOrNull())
+                    return
+                }
                 if (notifSources.isEmpty()) return
                 postNotification(song, notifSources[notifIndex % notifSources.size])
                 notifIndex++
