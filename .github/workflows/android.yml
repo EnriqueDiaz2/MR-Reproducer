@@ -1,0 +1,35 @@
+name: Generar APK Estable
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Clonar repositorio
+      uses: actions/checkout@v4
+
+    - name: Crear archivo secrets ficticio para compilar
+      run: echo 'API_LETRAS="clave-ficticia-github"' > secrets.properties
+
+    - name: Configurar Java 17
+      uses: actions/setup-java@v4
+      with:
+        distributiom: 'zulu'
+        java-version: '17'
+
+    - name: Dar permisos de ejecucion a Grandle
+      run: chmod +x grandlew
+
+    - name: Compilar APK (Modo Debug Estable)
+      run: ./gradlew assembleDebug
+
+    - name: Publicar Release en Github con el APK
+      uses: softprops/action-gh-releases@v2
+      with:
+        files: app/build/outputs/apk/debug/app-debug.apk
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
