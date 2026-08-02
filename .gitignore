@@ -13,7 +13,3 @@
 .externalNativeBuild
 .cxx
 local.properties
-*.iml
-*.jks
-*.keystore
-secrets.properties
