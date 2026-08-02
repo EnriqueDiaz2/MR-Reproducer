@@ -12,13 +12,10 @@ jobs:
     - name: Clonar repositorio
       uses: actions/checkout@v4
 
-    - name: Crear archivo secrets ficticio para compilar
-      run: echo 'API_LETRAS="clave-ficticia-github"' > secrets.properties
-
     - name: Configurar Java 17
       uses: actions/setup-java@v4
       with:
-        distributiom: 'zulu'
+        distribution: 'zulu'
         java-version: '17'
 
     - name: Dar permisos de ejecucion a Grandle
