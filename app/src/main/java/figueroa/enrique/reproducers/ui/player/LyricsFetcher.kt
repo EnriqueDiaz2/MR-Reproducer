@@ -20,7 +20,7 @@ object LyricsFetcher {
 
             if (artist.isBlank() || artist.equals("desconocido", ignoreCase = true) ||
                 artist.equals("unknown", ignoreCase = true)) {
-                android.util.Log.w("LyricsFetcher", "Artista desconocido, no se puede buscar letra")
+                Log.w("LyricsFetcher", "Artista desconocido, no se puede buscar letra")
                 return null
             }
 
@@ -52,12 +52,12 @@ object LyricsFetcher {
     private fun cleanTitle(text: String): String {
         return text
             .replace(Regex("\\(.*?\\)"), "")
-            .replace(Regex("\\[.*?\\]"), "")
+            .replace(Regex("\\[.*?]"), "")
             .replace(Regex("(?i)official\\s*(music\\s*)?video"), "")
             .replace(Regex("(?i)lyrics?"), "")
             .replace(Regex("(?i)audio"), "")
             .replace(Regex("(?i)ft\\.?|feat\\.?"), "")
-            .replace(Regex("[_]"), " ")
+            .replace(Regex("_"), " ")
             .replace(Regex("\\s+"), " ")
             .trim()
     }
