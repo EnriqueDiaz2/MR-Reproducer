@@ -25,6 +25,7 @@ import android.Manifest
 import figueroa.enrique.reproducers.util.AppPreferences
 import figueroa.enrique.reproducers.util.ArtworkResolver
 import figueroa.enrique.reproducers.util.CoverCarousel
+import figueroa.enrique.reproducers.util.InfoDialogHelper
 import kotlinx.coroutines.*
 
 class MainActivity : AppCompatActivity() {
@@ -53,6 +54,20 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
+
+        if (!AppPreferences.isWelcomeShown(this)) {
+            InfoDialogHelper.show(
+                context = this,
+                title = getString(R.string.welcome_title),
+                message = getString(R.string.welcome_message),
+                checkboxText = getString(R.string.dont_show_again),
+                buttonText = getString(R.string.understood)
+            ) { dontShowAgain ->
+                if (dontShowAgain) {
+                    AppPreferences.setWelcomeShown(this)
+                }
+            }
+        }
 
         binding.toolbar.menu.findItem(R.id.action_settings)?.icon?.let {
             it.mutate()

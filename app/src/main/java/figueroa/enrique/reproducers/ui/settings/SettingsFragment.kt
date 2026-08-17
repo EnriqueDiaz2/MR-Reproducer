@@ -29,6 +29,7 @@ import android.widget.ArrayAdapter
 import android.widget.AdapterView
 import android.widget.SeekBar
 import android.widget.TextView
+import figueroa.enrique.reproducers.util.InfoDialogHelper
 import kotlinx.coroutines.*
 import java.util.Locale
 
@@ -85,16 +86,55 @@ class SettingsFragment : Fragment() {
 
         binding.switchAdaptiveShuffle.isChecked = AppPreferences.isAdaptiveShuffleEnabled(requireContext())
         binding.switchAdaptiveShuffle.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && !AppPreferences.isAdaptiveShuffleInfoShown(requireContext())) {
+                figueroa.enrique.reproducers.util.InfoDialogHelper.show(
+                    context = requireContext(),
+                    title = getString(R.string.adaptive_shuffle_info_title),
+                    message = getString(R.string.adaptive_shuffle_info_message),
+                    checkboxText = getString(R.string.dont_show_again),
+                    buttonText = getString(R.string.understood)
+                ) { dontShowAgain ->
+                    if (dontShowAgain) {
+                        AppPreferences.setAdaptiveShuffleInfoShown(requireContext())
+                    }
+                }
+            }
             AppPreferences.setAdaptiveShuffle(requireContext(), isChecked)
         }
 
         binding.switchAppCarousel.isChecked = AppPreferences.isAppCarouselEnabled(requireContext())
         binding.switchAppCarousel.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && !AppPreferences.isCarouselInfoShown(requireContext())) {
+                InfoDialogHelper.show(
+                    context = requireContext(),
+                    title = getString(R.string.carousel_info_title),
+                    message = getString(R.string.carousel_info_message),
+                    checkboxText = getString(R.string.dont_show_again),
+                    buttonText = getString(R.string.understood)
+                ) { dontShowAgain ->
+                    if (dontShowAgain) {
+                        AppPreferences.setCarouselInfoShown(requireContext())
+                    }
+                }
+            }
             AppPreferences.setAppCarousel(requireContext(), isChecked)
         }
 
         binding.switchNotificationCarousel.isChecked = AppPreferences.isNotificationCarouselEnabled(requireContext())
         binding.switchNotificationCarousel.setOnCheckedChangeListener { _, isChecked ->
+            if (isChecked && !AppPreferences.isCarouselInfoShown(requireContext())) {
+                InfoDialogHelper.show(
+                    context = requireContext(),
+                    title = getString(R.string.carousel_info_title),
+                    message = getString(R.string.carousel_info_message),
+                    checkboxText = getString(R.string.dont_show_again),
+                    buttonText = getString(R.string.understood)
+                ) { dontShowAgain ->
+                    if (dontShowAgain) {
+                        AppPreferences.setCarouselInfoShown(requireContext())
+                    }
+                }
+            }
             AppPreferences.setNotificationCarousel(requireContext(), isChecked)
         }
 

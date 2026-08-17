@@ -49,6 +49,14 @@
     <string name="language_english">Inglés</string>
     <string name="player_not_ready">Reproductor no listo, intenta de nuevo</string>
     <string name="rewind_10_seconds">Retroceder 10 s</string>
+    <string name="welcome_title">¡Bienvenido!</string>
+    <string name="welcome_message">Esta app no contiene música para disfrutar. Ve a Ajustes y selecciona la carpeta donde tienes toda tu música, o importa un archivo.</string>
+    <string name="adaptive_shuffle_info_title">Aleatorio adaptativo</string>
+    <string name="adaptive_shuffle_info_message">Esta opción hace que las canciones que más escuchas aparezcan con más frecuencia al usar el modo aleatorio.</string>
+    <string name="carousel_info_title">Carrusel de imágenes</string>
+    <string name="carousel_info_message">Para que el carrusel funcione, primero agrega una imagen en el apartado de Artistas. Se necesitan al menos 2 imágenes disponibles (álbum, artista o portada del archivo) para que el carrusel rote entre ellas.</string>
+    <string name="dont_show_again">No volver a mostrar</string>
+    <string name="understood">Entendido</string>
     <string name="forward_10_seconds">Avanzar 10 s</string>
     <string name="previous_track">Anterior</string>
     <string name="play_pause">Play/Pausa</string>

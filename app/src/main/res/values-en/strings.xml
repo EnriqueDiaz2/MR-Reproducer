@@ -46,6 +46,14 @@
     <string name="language_english">English</string>
     <string name="player_not_ready">Player not ready, try again</string>
     <string name="rewind_10_seconds">Rewind 10 s</string>
+    <string name="welcome_title">Welcome!</string>
+    <string name="welcome_message">This app doesn\'t have any music to play yet. Go to Settings and select the folder containing your music, or import a file.</string>
+    <string name="adaptive_shuffle_info_title">Adaptive Shuffle</string>
+    <string name="adaptive_shuffle_info_message">This option makes your most-played songs appear more frequently when using shuffle mode.</string>
+    <string name="carousel_info_title">Image Carousel</string>
+    <string name="carousel_info_message">For the carousel to work, first add an image in the Artists section. At least 2 images must be available (album art, artist image, or file cover art) for the carousel to rotate between them.</string>
+    <string name="dont_show_again">Don\'t show again</string>
+    <string name="understood">Got it</string>
     <string name="forward_10_seconds">Forward 10 s</string>
     <string name="previous_track">Previous</string>
     <string name="play_pause">Play/Pause</string>
