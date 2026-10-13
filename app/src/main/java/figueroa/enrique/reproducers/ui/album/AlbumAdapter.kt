@@ -16,7 +16,7 @@ class AlbumAdapter(
     private val onEditCover: (Album) -> Unit
 ) : ListAdapter<Album, AlbumAdapter.VH>(DIFF) {
 
-    inner class VH(val binding: ItemAlbumBinding) : RecyclerView.ViewHolder(binding.root)
+    class VH(val binding: ItemAlbumBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         return VH(ItemAlbumBinding.inflate(LayoutInflater.from(parent.context), parent, false))

@@ -26,7 +26,7 @@ class SongAdapter(
     private val musicService: () -> MusicService?
 ) : ListAdapter<Song, SongAdapter.SongViewHolder>(DIFF) {
 
-    inner class SongViewHolder(val binding: ItemSongBinding) : RecyclerView.ViewHolder(binding.root)
+    class SongViewHolder(val binding: ItemSongBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): SongViewHolder {
         val binding = ItemSongBinding.inflate(LayoutInflater.from(parent.context), parent, false)

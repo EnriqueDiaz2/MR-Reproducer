@@ -26,6 +26,9 @@ interface PlaylistDao {
     @Query("DELETE FROM playlist_song_cross_ref WHERE playlistId = :playlistId AND songId = :songId")
     suspend fun removeSongFromPlaylist(playlistId: Long, songId: Long)
 
+    @Query("SELECT playlistId FROM playlist_song_cross_ref WHERE songId = :songId")
+    suspend fun getPlaylistIdsForSong(songId: Long): List<Long>
+
     @Delete
     suspend fun deletePlaylist(playlist: Playlist)
 }

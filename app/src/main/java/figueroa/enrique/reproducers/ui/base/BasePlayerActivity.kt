@@ -113,7 +113,7 @@ abstract class BasePlayerActivity : AppCompatActivity() {
         super.onStart()
         ContextCompat.startForegroundService(this, Intent(this, MusicService::class.java))
         Intent(this, MusicService::class.java).also {
-            bindService(it, connection, Context.BIND_AUTO_CREATE)
+            bindService(it, connection, BIND_AUTO_CREATE)
         }
     }
 

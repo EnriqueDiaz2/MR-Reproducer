@@ -13,7 +13,7 @@ import figueroa.enrique.reproducers.databinding.ItemArtistBinding
 class ArtistAdapter(private val onClick: (Artist) -> Unit) :
     ListAdapter<Artist, ArtistAdapter.VH>(DIFF) {
 
-    inner class VH(val binding: ItemArtistBinding) : RecyclerView.ViewHolder(binding.root)
+    class VH(val binding: ItemArtistBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         val binding = ItemArtistBinding.inflate(LayoutInflater.from(parent.context), parent, false)

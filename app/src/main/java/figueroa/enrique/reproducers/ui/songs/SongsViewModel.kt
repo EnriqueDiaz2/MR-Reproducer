@@ -1,6 +1,7 @@
 package figueroa.enrique.reproducers.ui.songs
 
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
@@ -15,8 +16,8 @@ class SongsViewModel(private val repo: MusicRepository) : ViewModel() {
 }
 
 class SongsViewModelFactory(private val repo: MusicRepository) :
-    androidx.lifecycle.ViewModelProvider.Factory {
-    override fun <T : androidx.lifecycle.ViewModel> create(modelClass: Class<T>): T {
+    ViewModelProvider.Factory {
+    override fun <T : ViewModel> create(modelClass: Class<T>): T {
         @Suppress("UNCHECKED_CAST")
         return SongsViewModel(repo) as T
     }

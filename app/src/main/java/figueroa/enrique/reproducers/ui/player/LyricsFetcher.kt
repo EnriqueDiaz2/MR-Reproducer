@@ -5,7 +5,6 @@ import okhttp3.OkHttpClient
 import okhttp3.Request
 import java.net.URLEncoder
 import java.util.concurrent.TimeUnit
-import figueroa.enrique.reproducers.BuildConfig
 
 object LyricsFetcher {
     private val client = OkHttpClient.Builder()

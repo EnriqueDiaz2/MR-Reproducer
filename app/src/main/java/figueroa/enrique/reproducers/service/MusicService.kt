@@ -5,7 +5,6 @@ import android.content.Intent
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.media.MediaMetadataRetriever
-import android.net.Uri
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
@@ -22,12 +21,16 @@ import figueroa.enrique.reproducers.data.repository.MusicRepository
 import figueroa.enrique.reproducers.ui.main.MainActivity
 import figueroa.enrique.reproducers.util.AppPreferences
 import android.app.PendingIntent
+import android.os.Handler
+import android.os.Looper
 import android.support.v4.media.MediaMetadataCompat
 import android.support.v4.media.session.MediaSessionCompat
 import android.support.v4.media.session.PlaybackStateCompat
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
 import kotlinx.coroutines.*
+import androidx.core.net.toUri
+import androidx.media3.common.Player
 
 class MusicService : Service() {
 
@@ -38,7 +41,7 @@ class MusicService : Service() {
     private val serviceScope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private val repo by lazy { MusicRepository(AppDatabase.getDatabase(this)) }
 
-    private val notifHandler = android.os.Handler(android.os.Looper.getMainLooper())
+    private val notifHandler = Handler(Looper.getMainLooper())
     private var notifCarouselRunnable: Runnable? = null
     private var notifSources: List<Bitmap> = emptyList()
     private var notifIndex = 0
@@ -81,8 +84,21 @@ class MusicService : Service() {
                 refreshSessionAndNotification()
             }
             override fun onPlaybackStateChanged(state: Int) {
-                if (state == androidx.media3.common.Player.STATE_ENDED) onSongFinished()
+                if (state == Player.STATE_ENDED) onSongFinished()
                 refreshSessionAndNotification()
+            }
+            override fun onPlayerError(error: androidx.media3.common.PlaybackException) {
+                android.util.Log.e("MusicService", "Error al reproducir pista: ${error.message}", error)
+                notifHandler.post {
+                    android.widget.Toast.makeText(
+                        this@MusicService,
+                        getString(R.string.error_playing_file),
+                        android.widget.Toast.LENGTH_SHORT
+                    ).show()
+                    if (currentPlaylist.isNotEmpty()) {
+                        next()
+                    }
+                }
             }
         })
     }
@@ -117,7 +133,7 @@ class MusicService : Service() {
         }
     }
 
-    fun isReady(): Boolean = player.playbackState == androidx.media3.common.Player.STATE_READY
+    fun isReady(): Boolean = player.playbackState == Player.STATE_READY
 
     override fun onBind(intent: Intent?): IBinder = binder
 
@@ -130,11 +146,38 @@ class MusicService : Service() {
         return START_STICKY
     }
 
+    private fun resolveValidFilePath(song: Song): String {
+        val path = song.filePath
+        if (path.startsWith("content://") || path.startsWith("http://") || path.startsWith("https://")) {
+            return path
+        }
+        val file = java.io.File(path)
+        if (file.exists()) return path
+
+        val lower = path.lowercase()
+        val altPath = when {
+            lower.endsWith(".m4a") -> path.substring(0, path.length - 4) + ".mp3"
+            lower.endsWith(".mp3") -> path.substring(0, path.length - 4) + ".m4a"
+            else -> null
+        }
+
+        if (altPath != null && java.io.File(altPath).exists()) {
+            val updated = song.copy(filePath = altPath)
+            serviceScope.launch {
+                repo.updateSong(updated)
+            }
+            return altPath
+        }
+
+        return path
+    }
+
     fun playSong(song: Song, playlist: List<Song> = listOf(song), index: Int = 0) {
         try {
             currentPlaylist = playlist.toMutableList()
             currentIndex = index
-            val mediaItem = MediaItem.fromUri(Uri.parse(song.filePath))
+            val validPath = resolveValidFilePath(song)
+            val mediaItem = MediaItem.fromUri(validPath.toUri())
             player.setMediaItem(mediaItem)
             player.prepare()
             player.play()
@@ -198,10 +241,11 @@ class MusicService : Service() {
     }
 
     private fun onSongFinished() {
-        when (repeatMode) {
-            REPEAT_ONE -> playSong(currentPlaylist[currentIndex], currentPlaylist, currentIndex)
-            REPEAT_ALL -> next()
-            REPEAT_OFF -> if (currentIndex < currentPlaylist.size - 1) next()
+        when {
+            repeatMode == REPEAT_ONE -> playSong(currentPlaylist[currentIndex], currentPlaylist, currentIndex)
+            isShuffle -> next()
+            repeatMode == REPEAT_ALL -> next()
+            repeatMode == REPEAT_OFF -> if (currentIndex < currentPlaylist.size - 1) next()
         }
     }
 
@@ -217,7 +261,7 @@ class MusicService : Service() {
         if (cachedArtworkPath == song.filePath) return cachedArtwork
         val retriever = MediaMetadataRetriever()
         val artwork = try {
-            val uri = Uri.parse(song.filePath)
+            val uri = song.filePath.toUri()
             if (uri.scheme == "content" || uri.scheme == "file") retriever.setDataSource(this, uri)
             else retriever.setDataSource(song.filePath)
             retriever.embeddedPicture?.let { BitmapFactory.decodeByteArray(it, 0, it.size) }
@@ -241,6 +285,10 @@ class MusicService : Service() {
         getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
     }
 
+    fun refreshCarouselSettings() {
+        refreshSessionAndNotification()
+    }
+
     private fun refreshSessionAndNotification() {
         val song = currentSong() ?: return
 
@@ -257,23 +305,19 @@ class MusicService : Service() {
         )
 
         val duration = player.duration
-        mediaSession.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
-                .apply { if (duration > 0) putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration) }
-                .build()
-        )
+        val metaBuilder = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
+        if (duration > 0) metaBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
+        mediaSession.setMetadata(metaBuilder.build())
 
         serviceScope.launch {
             val album = repo.albumById(song.albumId)
-            //val artist = repo.artistByName(song.artist)
             val embedded = loadArtwork(song)
 
             val bitmaps = mutableListOf<Bitmap>()
             uriToBitmap(album?.coverImagePath)?.let { bitmaps.add(it) }
             embedded?.let { bitmaps.add(it) }
-            //uriToBitmap(artist?.imagePath)?.let { bitmaps.add(it) }
 
             withContext(Dispatchers.Main) {
                 notifSources = bitmaps
@@ -292,14 +336,13 @@ class MusicService : Service() {
     private fun uriToBitmap(uriString: String?): Bitmap? {
         if (uriString.isNullOrBlank()) return null
         return try {
-            contentResolver.openInputStream(Uri.parse(uriString))?.use { BitmapFactory.decodeStream(it) }
+            contentResolver.openInputStream(uriString.toUri())?.use { BitmapFactory.decodeStream(it) }
         } catch (_: Exception) { null }
     }
 
     private fun startNotifCarousel(song: Song) {
         val runnable = object : Runnable {
             override fun run() {
-                // Si el usuario apagó el switch mientras el carrusel ya corría, se detiene aquí mismo
                 if (!AppPreferences.isNotificationCarouselEnabled(this@MusicService)) {
                     stopNotifCarousel()
                     postNotification(song, notifSources.firstOrNull())
@@ -319,47 +362,6 @@ class MusicService : Service() {
         notifCarouselRunnable?.let { notifHandler.removeCallbacks(it) }
         notifCarouselRunnable = null
     }
-
-    /*private fun refreshSessionAndNotification() {
-        val song = currentSong() ?: return
-
-        val state = if (player.isPlaying) PlaybackStateCompat.STATE_PLAYING else PlaybackStateCompat.STATE_PAUSED
-        val actions = PlaybackStateCompat.ACTION_PLAY or PlaybackStateCompat.ACTION_PAUSE or
-                PlaybackStateCompat.ACTION_PLAY_PAUSE or PlaybackStateCompat.ACTION_SKIP_TO_NEXT or
-                PlaybackStateCompat.ACTION_SKIP_TO_PREVIOUS or PlaybackStateCompat.ACTION_SEEK_TO
-
-        mediaSession.setPlaybackState(
-            PlaybackStateCompat.Builder()
-                .setActions(actions)
-                .setState(state, player.currentPosition, player.playbackParameters.speed)
-                .build()
-        )
-
-        val duration = player.duration
-        mediaSession.setMetadata(
-            MediaMetadataCompat.Builder()
-                .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
-                .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
-                .apply { if (duration > 0) putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration) }
-                .build()
-        )
-
-        // Prioridad de imagen: portada de álbum > embebida en el archivo > ninguna (ícono por defecto)
-        serviceScope.launch {
-            val albumCover = repo.albumById(song.albumId)?.coverImagePath
-            val bmp = albumCover ?: loadArtwork(song)
-            withContext(Dispatchers.Main) {
-                val bitmap: Bitmap? = when (bmp) {
-                    is Bitmap -> bmp
-                    is String -> try {
-                        contentResolver.openInputStream(Uri.parse(bmp))?.use { BitmapFactory.decodeStream(it) }
-                    } catch (_: Exception) { null }
-                    else -> null
-                }
-                postNotification(song, bitmap)
-            }
-        }
-    }*/
 
     @OptIn(UnstableApi::class)
     private fun postNotification(song: Song, largeIcon: Bitmap?) {
@@ -401,7 +403,17 @@ class MusicService : Service() {
                     .setShowActionsInCompactView(0, 1, 2)
             )
 
-        if (largeIcon != null) builder.setLargeIcon(largeIcon)
+        val duration = player.duration
+        val metaBuilder = MediaMetadataCompat.Builder()
+            .putString(MediaMetadataCompat.METADATA_KEY_TITLE, song.title)
+            .putString(MediaMetadataCompat.METADATA_KEY_ARTIST, song.artist)
+        if (duration > 0) metaBuilder.putLong(MediaMetadataCompat.METADATA_KEY_DURATION, duration)
+        if (largeIcon != null) {
+            builder.setLargeIcon(largeIcon)
+            metaBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ALBUM_ART, largeIcon)
+            metaBuilder.putBitmap(MediaMetadataCompat.METADATA_KEY_ART, largeIcon)
+        }
+        mediaSession.setMetadata(metaBuilder.build())
 
         startForeground(NOTIF_ID, builder.build())
     }

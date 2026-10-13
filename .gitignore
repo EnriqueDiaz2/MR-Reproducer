@@ -13,6 +13,9 @@
 .externalNativeBuild
 .cxx
 local.properties
+api/.venv/
+api/lyrics.db
+api/__pycache__/
 *.jks
 *.keystore
 *.log

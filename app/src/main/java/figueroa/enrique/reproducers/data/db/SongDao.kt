@@ -9,6 +9,9 @@ interface SongDao {
     @Query("SELECT * FROM songs ORDER BY title ASC")
     fun getAllSongs(): LiveData<List<Song>>
 
+    @Query("SELECT * FROM songs")
+    suspend fun getAllSongsList(): List<Song>
+
     @Query("SELECT * FROM songs WHERE isFavorite = 1")
     fun getFavorites(): LiveData<List<Song>>
 

@@ -32,6 +32,7 @@ import android.widget.TextView
 import figueroa.enrique.reproducers.util.InfoDialogHelper
 import kotlinx.coroutines.*
 import java.util.Locale
+import androidx.core.content.edit
 
 class SettingsFragment : Fragment() {
     private var _binding: FragmentSettingsBinding? = null
@@ -87,7 +88,7 @@ class SettingsFragment : Fragment() {
         binding.switchAdaptiveShuffle.isChecked = AppPreferences.isAdaptiveShuffleEnabled(requireContext())
         binding.switchAdaptiveShuffle.setOnCheckedChangeListener { _, isChecked ->
             if (isChecked && !AppPreferences.isAdaptiveShuffleInfoShown(requireContext())) {
-                figueroa.enrique.reproducers.util.InfoDialogHelper.show(
+                InfoDialogHelper.show(
                     context = requireContext(),
                     title = getString(R.string.adaptive_shuffle_info_title),
                     message = getString(R.string.adaptive_shuffle_info_message),
@@ -118,6 +119,7 @@ class SettingsFragment : Fragment() {
                 }
             }
             AppPreferences.setAppCarousel(requireContext(), isChecked)
+            (activity as? MainActivity)?.musicService?.refreshCarouselSettings()
         }
 
         binding.switchNotificationCarousel.isChecked = AppPreferences.isNotificationCarouselEnabled(requireContext())
@@ -136,6 +138,7 @@ class SettingsFragment : Fragment() {
                 }
             }
             AppPreferences.setNotificationCarousel(requireContext(), isChecked)
+            (activity as? MainActivity)?.musicService?.refreshCarouselSettings()
         }
 
         setupLanguageSpinner()
@@ -252,9 +255,9 @@ class SettingsFragment : Fragment() {
 
     private fun saveAppearanceMode(mode: String) {
         requireContext().getSharedPreferences(ReproducersApp.PREFS_NAME, Context.MODE_PRIVATE)
-            .edit()
-            .putString(ReproducersApp.KEY_APPEARANCE_MODE, mode)
-            .apply()
+            .edit {
+                putString(ReproducersApp.KEY_APPEARANCE_MODE, mode)
+            }
 
         when (mode) {
             ReproducersApp.MODE_LIGHT -> AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO)

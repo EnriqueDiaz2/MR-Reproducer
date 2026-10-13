@@ -8,7 +8,7 @@ class EqualizerHelper(audioSessionId: Int) {
     val bandCount = equalizer.numberOfBands
     val bandLevelRange: ShortArray = equalizer.bandLevelRange
 
-    fun getBandFreq(band: Short) = equalizer.getCenterFreq(band)
+    //fun getBandFreq(band: Short) = equalizer.getCenterFreq(band)
     fun setBandLevel(band: Short, level: Short) = equalizer.setBandLevel(band, level)
     fun getBandLevel(band: Short) = equalizer.getBandLevel(band)
     fun release() = equalizer.release()

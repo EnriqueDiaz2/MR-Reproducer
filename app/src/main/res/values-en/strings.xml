@@ -59,4 +59,19 @@
     <string name="play_pause">Play/Pause</string>
     <string name="next_track">Next</string>
     <string name="song_progress">%1$s / %2$s</string>
+    <string name="about_title">About</string>
+    <string name="close">Close</string>
+    <string name="about_message1">MR Reproducers</string>
+    <string name="about_message2">Version 1.0</string>
+    <string name="about_message3">Developed by DevEDPATeam</string>
+    <string name="about_message4">This app is only a local audio or music player</string>
+    <string name="about_message5">Report crashes or bugs to: </string>
+    <string name="about_message6">example@gmail.com</string>
+    <string name="about_message7">© 2026 DevEDPATeam</string>
+    <string name="error_playing_file">Error playing file</string>
+    <string name="rescan_folder">Rescan folder</string>
+    <string name="no_more_songs">No more new songs found</string>
+    <string name="songs_imported_count">%1$d new songs imported</string>
+    <string name="remove_from_playlist">Remove from playlist</string>
+    <string name="already_in_playlist">(Already added)</string>
 </resources>

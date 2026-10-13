@@ -2,115 +2,71 @@ package figueroa.enrique.reproducers.ui.player
 
 import android.content.*
 import android.os.*
-import android.view.View
-import android.widget.SeekBar
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
 import figueroa.enrique.reproducers.R
 import figueroa.enrique.reproducers.data.db.AppDatabase
 import figueroa.enrique.reproducers.data.model.Song
 import figueroa.enrique.reproducers.data.repository.MusicRepository
-import figueroa.enrique.reproducers.databinding.ActivityPlayerBinding
 import figueroa.enrique.reproducers.service.MusicService
+import figueroa.enrique.reproducers.ui.screens.PlayerScreen
+import figueroa.enrique.reproducers.ui.theme.ReproducersTheme
 import figueroa.enrique.reproducers.util.AppPreferences
 import figueroa.enrique.reproducers.util.ArtworkResolver
-import figueroa.enrique.reproducers.util.CoverCarousel
+import figueroa.enrique.reproducers.util.VisualizerHelper
 import kotlinx.coroutines.*
 import java.io.File
 
-@UnstableApi
-class PlayerActivity : AppCompatActivity() {
-    private lateinit var binding: ActivityPlayerBinding
+@androidx.annotation.OptIn(UnstableApi::class)
+class PlayerActivity : ComponentActivity() {
+
     private var musicService: MusicService? = null
     private var bound = false
     private lateinit var handler: Handler
     private lateinit var repo: MusicRepository
-    private var showingLyrics = false
-    private var isUserSeeking = false
+
+    private var currentSongState = mutableStateOf<Song?>(null)
+    private var isPlayingState = mutableStateOf(false)
+    private var currentPositionState = mutableLongStateOf(0L)
+    private var durationState = mutableLongStateOf(0L)
+    private var isShuffleState = mutableStateOf(false)
+    private var repeatModeState = mutableIntStateOf(MusicService.REPEAT_OFF)
+    private var coverSourcesState = mutableStateOf<List<Any>>(emptyList())
+    private var visualizerModeState = mutableIntStateOf(0)
+    private var showingLyricsState = mutableStateOf(false)
+    private var lyricsTextState = mutableStateOf<String?>(null)
     private var lyricsWarningShown = false
+
+    private var spectrumViewInstance: SpectrumVisualizerView? = null
+    private var vuMeterViewInstance: VuMeterView? = null
+    private val visualizerHelper = VisualizerHelper()
 
     private val connection = object : ServiceConnection {
         override fun onServiceConnected(name: ComponentName?, service: IBinder?) {
             musicService = (service as MusicService.MusicBinder).getService()
             bound = true
-            musicService?.setOnCurrentSongChangedListener { updateUI() }
-            updateUI()
-            syncShuffleRepeatIcons()
+            musicService?.setOnCurrentSongChangedListener { updateUIState() }
+            updateUIState()
             startProgressUpdates()
+            startVisualizerIfNeeded()
         }
         override fun onServiceDisconnected(name: ComponentName?) { bound = false }
     }
 
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-        handler = Handler(Looper.getMainLooper())
-        binding = ActivityPlayerBinding.inflate(layoutInflater)
-        setContentView(binding.root)
-        repo = MusicRepository(AppDatabase.getDatabase(this))
-
-        binding.btnCollapse.setOnClickListener { finish() }
-
-        binding.btnPlayPause.setOnClickListener {
-            musicService?.togglePlayPause()
-            updatePlayPauseIcon()
-        }
-        binding.btnNext.setOnClickListener { musicService?.next(); updateUI() }
-        binding.btnPrevious.setOnClickListener { musicService?.previous(); updateUI() }
-
-        binding.btnShuffle.setOnClickListener {
-            musicService?.let {
-                it.isShuffle = !it.isShuffle
-                binding.btnShuffle.alpha = if (it.isShuffle) 1f else 0.4f
-            }
-        }
-
-        binding.btnRepeat.setOnClickListener {
-            musicService?.let {
-                it.repeatMode = (it.repeatMode + 1) % 3
-                val icon = when (it.repeatMode) {
-                    MusicService.REPEAT_ONE -> R.drawable.ic_repeat_one
-                    MusicService.REPEAT_ALL -> R.drawable.ic_repeat
-                    else -> R.drawable.ic_repeat
-                }
-                binding.btnRepeat.setImageResource(icon)
-                binding.btnRepeat.alpha = if (it.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
-            }
-        }
-
-        binding.btnFavoritePlayer.setOnClickListener {
-            currentSong?.let { song ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    repo.toggleFavorite(song)
-                    withContext(Dispatchers.Main) {
-                        musicService?.updateCurrentSong(song.copy(isFavorite = !song.isFavorite))
-                        updateUI()
-                    }
-                }
-            }
-        }
-
-        binding.btnAddToPlaylist.setOnClickListener {
-            currentSong?.let { song -> showAddToPlaylistDialog(song) }
-        }
-
-        binding.btnLyrics.setOnClickListener { toggleLyrics() }
-
-        binding.seekBar.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
-            override fun onStartTrackingTouch(seekBar: SeekBar?) {
-                isUserSeeking = true
-            }
-            override fun onStopTrackingTouch(seekBar: SeekBar?) {
-                musicService?.seekTo(seekBar!!.progress.toLong())
-                isUserSeeking = false
-            }
-        })
-
-        binding.btnImportLyrics.setOnClickListener {
-            lyricsImportLauncher.launch(arrayOf("text/*"))
+    private val recordAudioPermissionLauncher = registerForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            startVisualizerIfNeeded()
+        } else {
+            Toast.makeText(this, "Permiso de audio requerido para el visualizador", Toast.LENGTH_SHORT).show()
+            setVisualizerMode(0)
         }
     }
 
@@ -120,8 +76,192 @@ class PlayerActivity : AppCompatActivity() {
         uri?.let { importLyricsFile(it) }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        handler = Handler(Looper.getMainLooper())
+        repo = MusicRepository(AppDatabase.getDatabase(this))
+
+        spectrumViewInstance = SpectrumVisualizerView(this)
+        vuMeterViewInstance = VuMeterView(this)
+        visualizerModeState.intValue = AppPreferences.getVisualizerMode(this)
+
+        setContent {
+            val prefs = getSharedPreferences(figueroa.enrique.reproducers.ReproducersApp.PREFS_NAME, Context.MODE_PRIVATE)
+            val savedMode = prefs.getString(figueroa.enrique.reproducers.ReproducersApp.KEY_APPEARANCE_MODE, figueroa.enrique.reproducers.ReproducersApp.MODE_SYSTEM)
+            val isDarkMode = when (savedMode) {
+                figueroa.enrique.reproducers.ReproducersApp.MODE_DARK -> true
+                figueroa.enrique.reproducers.ReproducersApp.MODE_LIGHT -> false
+                else -> (resources.configuration.uiMode and android.content.res.Configuration.UI_MODE_NIGHT_MASK) == android.content.res.Configuration.UI_MODE_NIGHT_YES
+            }
+
+            ReproducersTheme(darkTheme = isDarkMode) {
+                val currentSong = currentSongState.value
+                val isPlaying = isPlayingState.value
+                val currentPositionMs = currentPositionState.longValue
+                val durationMs = durationState.longValue
+                val isShuffle = isShuffleState.value
+                val repeatMode = repeatModeState.intValue
+                val coverSources = coverSourcesState.value
+                val visualizerMode = visualizerModeState.intValue
+                val showingLyrics = showingLyricsState.value
+                val lyricsText = lyricsTextState.value
+
+                PlayerScreen(
+                    currentSong = currentSong,
+                    isPlaying = isPlaying,
+                    currentPositionMs = currentPositionMs,
+                    durationMs = durationMs,
+                    isShuffle = isShuffle,
+                    repeatMode = repeatMode,
+                    coverSources = coverSources,
+                    visualizerMode = visualizerMode,
+                    showingLyrics = showingLyrics,
+                    lyricsText = lyricsText,
+                    onCollapseClick = { finish() },
+                    onPlayPauseClick = {
+                        musicService?.togglePlayPause()
+                        updateUIState()
+                    },
+                    onNextClick = {
+                        musicService?.next()
+                        updateUIState()
+                    },
+                    onPrevClick = {
+                        musicService?.previous()
+                        updateUIState()
+                    },
+                    onShuffleClick = {
+                        musicService?.let {
+                            it.isShuffle = !it.isShuffle
+                            isShuffleState.value = it.isShuffle
+                        }
+                    },
+                    onRepeatClick = {
+                        musicService?.let {
+                            it.repeatMode = (it.repeatMode + 1) % 3
+                            repeatModeState.intValue = it.repeatMode
+                        }
+                    },
+                    onFavoriteClick = {
+                        currentSong?.let { song ->
+                            CoroutineScope(Dispatchers.IO).launch {
+                                repo.toggleFavorite(song)
+                                withContext(Dispatchers.Main) {
+                                    val updated = song.copy(isFavorite = !song.isFavorite)
+                                    musicService?.updateCurrentSong(updated)
+                                    currentSongState.value = updated
+                                }
+                            }
+                        }
+                    },
+                    onAddToPlaylistClick = {
+                        currentSong?.let { song -> showAddToPlaylistDialog(song) }
+                    },
+                    onLyricsClick = { toggleLyrics() },
+                    onImportLyricsClick = { lyricsImportLauncher.launch(arrayOf("text/*")) },
+                    onPrevVisualizerModeClick = { setVisualizerMode((visualizerModeState.intValue + 2) % 3) },
+                    onNextVisualizerModeClick = { setVisualizerMode((visualizerModeState.intValue + 1) % 3) },
+                    onSeekTo = { posMs -> musicService?.seekTo(posMs) },
+                    spectrumViewInstance = spectrumViewInstance,
+                    vuMeterViewInstance = vuMeterViewInstance
+                )
+            }
+        }
+    }
+
+    private fun setVisualizerMode(mode: Int, save: Boolean = true) {
+        visualizerModeState.intValue = mode
+        if (save) AppPreferences.setVisualizerMode(this, mode)
+        startVisualizerIfNeeded()
+    }
+
+    private fun startVisualizerIfNeeded() {
+        if (showingLyricsState.value || visualizerModeState.intValue == 0) {
+            visualizerHelper.stop()
+            return
+        }
+
+        if (ContextCompat.checkSelfPermission(
+                this,
+                android.Manifest.permission.RECORD_AUDIO
+            ) != android.content.pm.PackageManager.PERMISSION_GRANTED
+        ) {
+            recordAudioPermissionLauncher.launch(android.Manifest.permission.RECORD_AUDIO)
+            return
+        }
+
+        val sessionId = musicService?.getExoPlayer()?.audioSessionId ?: 0
+        if (sessionId > 0) {
+            visualizerHelper.start(
+                audioSessionId = sessionId,
+                onFftData = { fft ->
+                    if (visualizerModeState.intValue == 1) {
+                        spectrumViewInstance?.updateFft(fft)
+                    }
+                },
+                onWaveformData = { waveform ->
+                    if (visualizerModeState.intValue == 2) {
+                        vuMeterViewInstance?.updateWaveform(waveform)
+                    }
+                }
+            )
+        }
+    }
+
+    private fun toggleLyrics() {
+        if (!showingLyricsState.value && !lyricsWarningShown) {
+            showLyricsWarningDialog()
+            return
+        }
+        proceedToggleLyrics()
+    }
+
+    private fun proceedToggleLyrics() {
+        showingLyricsState.value = !showingLyricsState.value
+        if (showingLyricsState.value) {
+            visualizerHelper.stop()
+            fetchOrLoadLyrics()
+        } else {
+            setVisualizerMode(visualizerModeState.intValue, save = false)
+        }
+    }
+
+    private fun showLyricsWarningDialog() {
+        android.app.AlertDialog.Builder(this)
+            .setTitle(getString(R.string.lyrics_warning_title))
+            .setMessage(getString(R.string.lyrics_warning_message))
+            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
+                lyricsWarningShown = true
+                dialog.dismiss()
+                proceedToggleLyrics()
+            }
+            .setNegativeButton(getString(R.string.cancel)) { dialog, _ -> dialog.dismiss() }
+            .setCancelable(true)
+            .show()
+    }
+
+    private fun fetchOrLoadLyrics() {
+        val song = currentSongState.value ?: return
+        lyricsTextState.value = getString(R.string.searching_lyrics)
+        CoroutineScope(Dispatchers.IO).launch {
+            val lyrics = if (song.lyricsPath != null) {
+                try { File(song.lyricsPath).readText() } catch (e: Exception) { null }
+            } else {
+                LyricsFetcher.searchOnline(song.title, song.artist)
+            }
+            withContext(Dispatchers.Main) {
+                lyricsTextState.value = lyrics ?: run {
+                    if (song.artist.equals("Desconocido", ignoreCase = true))
+                        getString(R.string.lyrics_needs_artist)
+                    else
+                        getString(R.string.no_lyrics_found)
+                }
+            }
+        }
+    }
+
     private fun importLyricsFile(uri: android.net.Uri) {
-        val song = currentSong ?: return
+        val song = currentSongState.value ?: return
         CoroutineScope(Dispatchers.IO).launch {
             try {
                 val text = contentResolver.openInputStream(uri)?.bufferedReader()?.use { it.readText() }
@@ -131,7 +271,6 @@ class PlayerActivity : AppCompatActivity() {
                     }
                     return@launch
                 }
-                // Guarda una copia local para no depender del URI externo
                 val fileName = "lyrics_${song.id}.txt"
                 val internalFile = File(filesDir, fileName)
                 internalFile.writeText(text)
@@ -142,7 +281,7 @@ class PlayerActivity : AppCompatActivity() {
 
                 withContext(Dispatchers.Main) {
                     Toast.makeText(this@PlayerActivity, getString(R.string.lyrics_imported), Toast.LENGTH_SHORT).show()
-                    if (showingLyrics) fetchOrLoadLyrics()
+                    if (showingLyricsState.value) fetchOrLoadLyrics()
                 }
             } catch (e: Exception) {
                 withContext(Dispatchers.Main) {
@@ -150,41 +289,6 @@ class PlayerActivity : AppCompatActivity() {
                 }
             }
         }
-    }
-
-    private val currentSong get() = musicService?.currentPlaylist?.getOrNull(musicService?.currentIndex ?: 0)
-
-    private fun updateUI() {
-        val song = currentSong ?: return
-        binding.playerTitle.text = song.title
-        binding.playerArtist.text = song.artist
-
-        CoroutineScope(Dispatchers.Main).launch {
-            val sources = withContext(Dispatchers.IO) {
-                ArtworkResolver.sourcesFor(this@PlayerActivity, song, musicService)
-            }
-            if (AppPreferences.isAppCarouselEnabled(this@PlayerActivity) && sources.size > 1) {
-                CoverCarousel.start(binding.playerCover, sources)
-            } else {
-                CoverCarousel.applyStatic(binding.playerCover, sources)
-            }
-        }
-
-        binding.btnFavoritePlayer.setImageResource(
-            if (song.isFavorite) R.drawable.ic_favorite else R.drawable.ic_favorite_border
-        )
-        updatePlayPauseIcon()
-    }
-
-    private fun syncShuffleRepeatIcons() {
-        val service = musicService ?: return
-        binding.btnShuffle.alpha = if (service.isShuffle) 1f else 0.4f
-        val repeatIcon = when (service.repeatMode) {
-            MusicService.REPEAT_ONE -> R.drawable.ic_repeat_one
-            else -> R.drawable.ic_repeat
-        }
-        binding.btnRepeat.setImageResource(repeatIcon)
-        binding.btnRepeat.alpha = if (service.repeatMode == MusicService.REPEAT_OFF) 0.4f else 1f
     }
 
     private fun showAddToPlaylistDialog(song: Song) {
@@ -210,11 +314,23 @@ class PlayerActivity : AppCompatActivity() {
         }
     }
 
-    private fun updatePlayPauseIcon() {
-        val playing = musicService?.isPlaying() == true
-        binding.btnPlayPause.setImageResource(
-            if (playing) R.drawable.ic_pause_circle else R.drawable.ic_play_circle
-        )
+    private fun updateUIState() {
+        val service = musicService ?: return
+        val song = service.currentPlaylist.getOrNull(service.currentIndex) ?: return
+
+        currentSongState.value = song
+        isPlayingState.value = service.isPlaying()
+        isShuffleState.value = service.isShuffle
+        repeatModeState.intValue = service.repeatMode
+
+        CoroutineScope(Dispatchers.Main).launch {
+            val sources = withContext(Dispatchers.IO) {
+                ArtworkResolver.sourcesFor(this@PlayerActivity, song, service)
+            }
+            coverSourcesState.value = sources
+        }
+
+        startVisualizerIfNeeded()
     }
 
     private fun startProgressUpdates() {
@@ -222,21 +338,14 @@ class PlayerActivity : AppCompatActivity() {
             override fun run() {
                 val service = musicService
                 if (service != null) {
-                    updatePlayPauseIcon() // <-- se refresca cada 500ms, siempre en sincronía real
-
-                    if (service.isReady() && !isUserSeeking) {
-                        val duration = service.getDuration()
-                        if (duration > 0) {
-                            if (binding.seekBar.max != duration.toInt()) {
-                                binding.seekBar.max = duration.toInt()
-                            }
-                            val current = service.getCurrentPosition().toInt()
-                            if (Build.VERSION.SDK_INT >= 26) {
-                                binding.seekBar.setProgress(current, true)
-                            } else {
-                                binding.seekBar.progress = current
-                            }
-                        }
+                    val playing = service.isPlaying()
+                    isPlayingState.value = playing
+                    if (!playing) {
+                        spectrumViewInstance?.reset()
+                    }
+                    if (service.isReady()) {
+                        durationState.longValue = service.getDuration()
+                        currentPositionState.longValue = service.getCurrentPosition()
                     }
                 }
                 handler.postDelayed(this, 500)
@@ -244,66 +353,15 @@ class PlayerActivity : AppCompatActivity() {
         })
     }
 
-    private fun toggleLyrics() {
-        // Si vamos a MOSTRAR la letra y aún no se ha avisado en esta sesión, mostrar el aviso primero
-        if (!showingLyrics && !lyricsWarningShown) {
-            showLyricsWarningDialog()
-            return
-        }
-        proceedToggleLyrics()
-    }
-
-    private fun proceedToggleLyrics() {
-        showingLyrics = !showingLyrics
-        binding.lyricsView.visibility = if (showingLyrics) View.VISIBLE else View.GONE
-        binding.playerCover.visibility = if (showingLyrics) View.GONE else View.VISIBLE
-        if (showingLyrics) fetchOrLoadLyrics()
-    }
-
-    private fun showLyricsWarningDialog() {
-        android.app.AlertDialog.Builder(this)
-            .setTitle(getString(R.string.lyrics_warning_title))
-            .setMessage(getString(R.string.lyrics_warning_message))
-            .setPositiveButton(getString(R.string.ok)) { dialog, _ ->
-                lyricsWarningShown = true
-                dialog.dismiss()
-                proceedToggleLyrics()
-            }
-            .setNegativeButton(getString(R.string.cancel)) { dialog, _ ->
-                dialog.dismiss()
-            }
-            .setCancelable(true)
-            .show()
-    }
-
-    private fun fetchOrLoadLyrics() {
-        val song = currentSong ?: return
-        binding.lyricsView.text = getString(R.string.searching_lyrics)
-        CoroutineScope(Dispatchers.IO).launch {
-            val lyrics = if (song.lyricsPath != null) {
-                try { File(song.lyricsPath).readText() } catch (e: Exception) { null }
-            } else {
-                LyricsFetcher.searchOnline(song.title, song.artist)
-            }
-            withContext(Dispatchers.Main) {
-                binding.lyricsView.text = lyrics ?: run {
-                    if (song.artist.equals("Desconocido", ignoreCase = true))
-                        getString(R.string.lyrics_needs_artist)
-                    else
-                        getString(R.string.no_lyrics_found)
-                }
-            }
-        }
-    }
-
     override fun onStart() {
         super.onStart()
         ContextCompat.startForegroundService(this, Intent(this, MusicService::class.java))
-        Intent(this, MusicService::class.java).also { bindService(it, connection, Context.BIND_AUTO_CREATE) }
+        Intent(this, MusicService::class.java).also { bindService(it, connection, BIND_AUTO_CREATE) }
     }
 
     override fun onStop() {
         super.onStop()
+        visualizerHelper.stop()
         musicService?.setOnCurrentSongChangedListener(null)
         if (bound) { unbindService(connection); bound = false }
         handler.removeCallbacksAndMessages(null)

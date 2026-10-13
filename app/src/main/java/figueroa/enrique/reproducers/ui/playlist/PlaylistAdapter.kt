@@ -13,7 +13,7 @@ import figueroa.enrique.reproducers.databinding.ItemPlaylistBinding
 class PlaylistAdapter(private val onClick: (Playlist) -> Unit) :
     ListAdapter<Playlist, PlaylistAdapter.VH>(DIFF) {
 
-    inner class VH(val binding: ItemPlaylistBinding) : RecyclerView.ViewHolder(binding.root)
+    class VH(val binding: ItemPlaylistBinding) : RecyclerView.ViewHolder(binding.root)
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): VH {
         return VH(ItemPlaylistBinding.inflate(LayoutInflater.from(parent.context), parent, false))

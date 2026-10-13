@@ -18,7 +18,6 @@ class ArtistsFragment : Fragment() {
     private lateinit var repo: MusicRepository
     private lateinit var adapter: ArtistAdapter
 
-
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentArtistsBinding.inflate(inflater, container, false)
         return binding.root

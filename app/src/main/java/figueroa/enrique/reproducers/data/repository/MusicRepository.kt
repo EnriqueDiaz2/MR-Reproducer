@@ -16,6 +16,8 @@ class MusicRepository(db: AppDatabase) {
     val allArtists: LiveData<List<Artist>> = artistDao.getAllArtists()
     val allPlaylists: LiveData<List<Playlist>> = playlistDao.getAllPlaylists()
 
+    suspend fun getAllSongsList() = songDao.getAllSongsList()
+
     //fun songsByAlbum(albumId: Long) = songDao.getSongsByAlbum(albumId)
     fun songsByAlbum(albumName: String, artistName: String) = songDao.getSongsByAlbum(albumName, artistName)
     fun songsByArtist(name: String) = songDao.getSongsByArtist(name)
@@ -26,7 +28,7 @@ class MusicRepository(db: AppDatabase) {
         songDao.setFavorite(song.id, !song.isFavorite)
     }
 
-    suspend fun artistByName(name: String) = artistDao.findByName(name)
+    //suspend fun artistByName(name: String) = artistDao.findByName(name)
 
     //suspend fun insertSong(song: Song) = songDao.insert(song)
 
@@ -49,6 +51,12 @@ class MusicRepository(db: AppDatabase) {
 
     suspend fun addSongToPlaylist(playlistId: Long, songId: Long) =
         playlistDao.addSongToPlaylist(PlaylistSongCrossRef(playlistId, songId))
+
+    suspend fun removeSongFromPlaylist(playlistId: Long, songId: Long) =
+        playlistDao.removeSongFromPlaylist(playlistId, songId)
+
+    suspend fun getPlaylistIdsForSong(songId: Long) =
+        playlistDao.getPlaylistIdsForSong(songId)
 
     // Escanea una carpeta e inserta canciones + crea álbum/artista si no existen
     suspend fun importSongsFromFolder(songs: List<Song>) {

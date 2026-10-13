@@ -53,7 +53,7 @@ class AlbumsFragment : Fragment() {
         adapter = AlbumAdapter(
             onClick = { album ->
                 startActivity(
-                    Intent(requireContext(), figueroa.enrique.reproducers.ui.album.AlbumDetailActivity::class.java)
+                    Intent(requireContext(), AlbumDetailActivity::class.java)
                         .putExtra("albumId", album.id)
                         .putExtra("albumName", album.name)
                         .putExtra("albumArtist", album.artist)

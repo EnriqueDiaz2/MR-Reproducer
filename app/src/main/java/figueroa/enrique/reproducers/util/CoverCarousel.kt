@@ -1,3 +1,5 @@
+@file:Suppress("DEPRECATION")
+
 package figueroa.enrique.reproducers.util
 
 import android.app.Activity
@@ -6,7 +8,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.ImageView
 import androidx.core.content.ContextCompat
-import androidx.core.view.ViewCompat
+import androidx.core.view.ViewCompat.isAttachedToWindow
 import com.bumptech.glide.Glide
 import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
 import figueroa.enrique.reproducers.R
@@ -17,10 +19,9 @@ object CoverCarousel {
 
     private fun isSafeToLoad(imageView: ImageView, token: Any): Boolean {
         if (runningTags[imageView] != token) return false
-        if (!ViewCompat.isAttachedToWindow(imageView)) return false
+        if (!isAttachedToWindow(imageView)) return false
         val activity = imageView.context as? Activity
-        if (activity != null && (activity.isFinishing || activity.isDestroyed)) return false
-        return true
+        return !(activity != null && (activity.isFinishing || activity.isDestroyed))
     }
 
     private fun render(imageView: ImageView, src: Any) {
